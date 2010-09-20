@@ -1,0 +1,21 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  type: LinearFunction
+  base: 
+  inc: 
+  round_to_nearest: 
+  min_n: 
+  max_n: 
+  min_v: 
+  max_v: 
+
+two:
+  type: LinearFunction
+  base: 
+  inc: 
+  round_to_nearest: 
+  min_n: 
+  max_n: 
+  min_v: 
+  max_v: 

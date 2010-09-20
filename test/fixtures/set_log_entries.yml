@@ -1,0 +1,25 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  exercise_log_entry_id: 1
+  workout_set_id: 1
+  position: 1
+  v1: 
+  v2: 
+  v3: 
+  v4: 
+  v5: 
+  v6: 
+  v7: 
+
+two:
+  exercise_log_entry_id: 1
+  workout_set_id: 1
+  position: 1
+  v1: 
+  v2: 
+  v3: 
+  v4: 
+  v5: 
+  v6: 
+  v7: 

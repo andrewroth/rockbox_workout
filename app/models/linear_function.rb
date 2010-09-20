@@ -1,0 +1,2 @@
+class LinearFunction < Function
+end

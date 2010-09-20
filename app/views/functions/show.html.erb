@@ -1,0 +1,45 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Type:</b>
+  <%= @function.type %>
+</p>
+
+<p>
+  <b>Base:</b>
+  <%= @function.base %>
+</p>
+
+<p>
+  <b>Inc:</b>
+  <%= @function.inc %>
+</p>
+
+<p>
+  <b>Round to nearest:</b>
+  <%= @function.round_to_nearest %>
+</p>
+
+<p>
+  <b>Min n:</b>
+  <%= @function.min_n %>
+</p>
+
+<p>
+  <b>Max n:</b>
+  <%= @function.max_n %>
+</p>
+
+<p>
+  <b>Min v:</b>
+  <%= @function.min_v %>
+</p>
+
+<p>
+  <b>Max v:</b>
+  <%= @function.max_v %>
+</p>
+
+
+<%= link_to 'Edit', edit_function_path(@function) %> |
+<%= link_to 'Back', functions_path %>

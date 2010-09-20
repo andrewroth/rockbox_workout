@@ -1,0 +1,15 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>When:</b>
+  <%= @workout_date.when %>
+</p>
+
+<p>
+  <b>Workout:</b>
+  <%= @workout_date.workout_id %>
+</p>
+
+
+<%= link_to 'Edit', edit_workout_date_path(@workout_date) %> |
+<%= link_to 'Back', workout_dates_path %>

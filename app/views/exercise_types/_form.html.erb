@@ -1,0 +1,49 @@
+<%= form_for(@exercise_type) do |f| %>
+  <% if @exercise_type.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@exercise_type.errors.count, "error") %> prohibited this exercise_type from being saved:</h2>
+
+      <ul>
+      <% @exercise_type.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name %><br />
+    <%= f.text_field :name %>
+  </div>
+  <div class="field">
+    <%= f.label :v1 %><br />
+    <%= f.text_field :v1 %>
+  </div>
+  <div class="field">
+    <%= f.label :v2 %><br />
+    <%= f.text_field :v2 %>
+  </div>
+  <div class="field">
+    <%= f.label :v3 %><br />
+    <%= f.text_field :v3 %>
+  </div>
+  <div class="field">
+    <%= f.label :v4 %><br />
+    <%= f.text_field :v4 %>
+  </div>
+  <div class="field">
+    <%= f.label :v5 %><br />
+    <%= f.text_field :v5 %>
+  </div>
+  <div class="field">
+    <%= f.label :v6 %><br />
+    <%= f.text_field :v6 %>
+  </div>
+  <div class="field">
+    <%= f.label :v7 %><br />
+    <%= f.text_field :v7 %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

@@ -1,0 +1,21 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  name: MyString
+  v1: MyString
+  v2: MyString
+  v3: MyString
+  v4: MyString
+  v5: MyString
+  v6: MyString
+  v7: MyString
+
+two:
+  name: MyString
+  v1: MyString
+  v2: MyString
+  v3: MyString
+  v4: MyString
+  v5: MyString
+  v6: MyString
+  v7: MyString

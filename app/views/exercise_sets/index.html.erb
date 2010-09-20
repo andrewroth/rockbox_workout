@@ -1,0 +1,27 @@
+<h1>Listing exercise_sets</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Position</th>
+    <th>Exercise</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @exercise_sets.each do |exercise_set| %>
+  <tr>
+    <td><%= exercise_set.name %></td>
+    <td><%= exercise_set.position %></td>
+    <td><%= exercise_set.exercise_id %></td>
+    <td><%= link_to 'Show', exercise_set %></td>
+    <td><%= link_to 'Edit', edit_exercise_set_path(exercise_set) %></td>
+    <td><%= link_to 'Destroy', exercise_set, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Exercise set', new_exercise_set_path %>

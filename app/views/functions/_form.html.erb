@@ -1,0 +1,49 @@
+<%= form_for(@function) do |f| %>
+  <% if @function.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@function.errors.count, "error") %> prohibited this function from being saved:</h2>
+
+      <ul>
+      <% @function.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :type %><br />
+    <%= f.text_field :type %>
+  </div>
+  <div class="field">
+    <%= f.label :base %><br />
+    <%= f.text_field :base %>
+  </div>
+  <div class="field">
+    <%= f.label :inc %><br />
+    <%= f.text_field :inc %>
+  </div>
+  <div class="field">
+    <%= f.label :round_to_nearest %><br />
+    <%= f.text_field :round_to_nearest %>
+  </div>
+  <div class="field">
+    <%= f.label :min_n %><br />
+    <%= f.text_field :min_n %>
+  </div>
+  <div class="field">
+    <%= f.label :max_n %><br />
+    <%= f.text_field :max_n %>
+  </div>
+  <div class="field">
+    <%= f.label :min_v %><br />
+    <%= f.text_field :min_v %>
+  </div>
+  <div class="field">
+    <%= f.label :max_v %><br />
+    <%= f.text_field :max_v %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

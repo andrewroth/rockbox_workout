@@ -1,0 +1,27 @@
+<h1>Listing workouts</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>N</th>
+    <th>Description</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @workouts.each do |workout| %>
+  <tr>
+    <td><%= workout.name %></td>
+    <td><%= workout.n %></td>
+    <td><%= workout.description %></td>
+    <td><%= link_to 'Show', workout %></td>
+    <td><%= link_to 'Edit', edit_workout_path(workout) %></td>
+    <td><%= link_to 'Destroy', workout, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Workout', new_workout_path %>

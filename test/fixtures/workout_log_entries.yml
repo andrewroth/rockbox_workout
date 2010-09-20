@@ -1,0 +1,9 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  workout_id: 1
+  n: 1
+
+two:
+  workout_id: 1
+  n: 1

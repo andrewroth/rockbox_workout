@@ -1,0 +1,57 @@
+<%= form_for(@set_log_entry) do |f| %>
+  <% if @set_log_entry.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@set_log_entry.errors.count, "error") %> prohibited this set_log_entry from being saved:</h2>
+
+      <ul>
+      <% @set_log_entry.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :exercise_log_entry_id %><br />
+    <%= f.text_field :exercise_log_entry_id %>
+  </div>
+  <div class="field">
+    <%= f.label :workout_set_id %><br />
+    <%= f.text_field :workout_set_id %>
+  </div>
+  <div class="field">
+    <%= f.label :position %><br />
+    <%= f.text_field :position %>
+  </div>
+  <div class="field">
+    <%= f.label :v1 %><br />
+    <%= f.text_field :v1 %>
+  </div>
+  <div class="field">
+    <%= f.label :v2 %><br />
+    <%= f.text_field :v2 %>
+  </div>
+  <div class="field">
+    <%= f.label :v3 %><br />
+    <%= f.text_field :v3 %>
+  </div>
+  <div class="field">
+    <%= f.label :v4 %><br />
+    <%= f.text_field :v4 %>
+  </div>
+  <div class="field">
+    <%= f.label :v5 %><br />
+    <%= f.text_field :v5 %>
+  </div>
+  <div class="field">
+    <%= f.label :v6 %><br />
+    <%= f.text_field :v6 %>
+  </div>
+  <div class="field">
+    <%= f.label :v7 %><br />
+    <%= f.text_field :v7 %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

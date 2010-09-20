@@ -1,0 +1,37 @@
+<h1>Listing exercise_types</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>V1</th>
+    <th>V2</th>
+    <th>V3</th>
+    <th>V4</th>
+    <th>V5</th>
+    <th>V6</th>
+    <th>V7</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @exercise_types.each do |exercise_type| %>
+  <tr>
+    <td><%= exercise_type.name %></td>
+    <td><%= exercise_type.v1 %></td>
+    <td><%= exercise_type.v2 %></td>
+    <td><%= exercise_type.v3 %></td>
+    <td><%= exercise_type.v4 %></td>
+    <td><%= exercise_type.v5 %></td>
+    <td><%= exercise_type.v6 %></td>
+    <td><%= exercise_type.v7 %></td>
+    <td><%= link_to 'Show', exercise_type %></td>
+    <td><%= link_to 'Edit', edit_exercise_type_path(exercise_type) %></td>
+    <td><%= link_to 'Destroy', exercise_type, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Exercise type', new_exercise_type_path %>

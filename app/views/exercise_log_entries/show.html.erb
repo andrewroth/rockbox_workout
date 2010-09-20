@@ -1,0 +1,25 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Workout log entry:</b>
+  <%= @exercise_log_entry.workout_log_entry_id %>
+</p>
+
+<p>
+  <b>Workout exercise:</b>
+  <%= @exercise_log_entry.workout_exercise_id %>
+</p>
+
+<p>
+  <b>N:</b>
+  <%= @exercise_log_entry.n %>
+</p>
+
+<p>
+  <b>Position:</b>
+  <%= @exercise_log_entry.position %>
+</p>
+
+
+<%= link_to 'Edit', edit_exercise_log_entry_path(@exercise_log_entry) %> |
+<%= link_to 'Back', exercise_log_entries_path %>

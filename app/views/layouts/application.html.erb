@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RockboxWorkout</title>
+  <%= stylesheet_link_tag :all %>
+  <%= javascript_include_tag :defaults %>
+  <%= csrf_meta_tag %>
+</head>
+<body>
+
+  <%= link_to "Exercise Types", exercise_types_url %>
+  <%= link_to "Exercises", exercises_url %>
+  <%= link_to "Workouts", workouts_url %>
+
+<%= yield %>
+
+</body>
+</html>

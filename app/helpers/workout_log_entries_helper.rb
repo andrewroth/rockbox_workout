@@ -1,0 +1,2 @@
+module WorkoutLogEntriesHelper
+end

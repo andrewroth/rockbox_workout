@@ -5,3 +5,5 @@ tmp/**/*
 config/database.yml
 *.tmp
 log
+Gemfile.lock
+*.swp

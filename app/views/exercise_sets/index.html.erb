@@ -14,7 +14,7 @@
   <tr>
     <td><%= exercise_set.name %></td>
     <td><%= exercise_set.position %></td>
-    <td><%= exercise_set.exercise_id %></td>
+    <td><%= exercise_set.exercise.name %></td>
     <td><%= link_to 'Show', exercise_set %></td>
     <td><%= link_to 'Edit', edit_exercise_set_path(exercise_set) %></td>
     <td><%= link_to 'Destroy', exercise_set, :confirm => 'Are you sure?', :method => :delete %></td>

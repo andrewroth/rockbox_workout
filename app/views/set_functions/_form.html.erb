@@ -13,7 +13,7 @@
 
   <div class="field">
     <%= f.label :set_id %><br />
-    <%= f.text_field :set_id %>
+    <%= f.collection_select :set_id, ExerciseSet.all, :id, :name_with_exercise %>
   </div>
   <div class="field">
     <%= f.label :variable %><br />

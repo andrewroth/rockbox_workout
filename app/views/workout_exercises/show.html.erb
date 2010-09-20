@@ -2,12 +2,12 @@
 
 <p>
   <b>Workout:</b>
-  <%= @workout_exercise.workout_id %>
+  <%= @workout_exercise.workout.try(:name) %>
 </p>
 
 <p>
   <b>Exercise:</b>
-  <%= @workout_exercise.exercise_id %>
+  <%= link_to @workout_exercise.exercise.try(:name), @workout_exercise.exercise %>
 </p>
 
 <p>

@@ -12,7 +12,7 @@
 
 <p>
   <b>Exercise type:</b>
-  <%= @exercise.exercise_type_id %>
+  <%= link_to @exercise.exercise_type.try(:name), @exercise.exercise_type %>
 </p>
 
 

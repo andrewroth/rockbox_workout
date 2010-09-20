@@ -2,7 +2,9 @@
 
 <table>
   <tr>
-    <th>Type</th>
+    <th>Set</th>
+    <th>Variable</th>
+    <!--<th>Type</th>-->
     <th>Base</th>
     <th>Inc</th>
     <th>Round to nearest</th>
@@ -17,7 +19,8 @@
 
 <% @functions.each do |function| %>
   <tr>
-    <td><%= function.type %></td>
+    <td><%= function.exercise_set.name_with_exercise %></td>
+    <td><%= function.variable %></td>
     <td><%= function.base %></td>
     <td><%= function.inc %></td>
     <td><%= function.round_to_nearest %></td>

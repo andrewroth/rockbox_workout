@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20100920010901) do
+ActiveRecord::Schema.define(:version => 20100920023618) do
 
   create_table "exercise_log_entries", :force => true do |t|
     t.integer  "workout_log_entry_id"
@@ -62,6 +62,8 @@ ActiveRecord::Schema.define(:version => 20100920010901) do
     t.decimal  "max_v"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "variable"
+    t.integer  "exercise_set_id"
   end
 
   create_table "set_functions", :force => true do |t|

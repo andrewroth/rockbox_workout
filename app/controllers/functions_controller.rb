@@ -40,7 +40,7 @@ class FunctionsController < ApplicationController
   # POST /functions
   # POST /functions.xml
   def create
-    @function = LinearFunction.new(params[:function])
+    @function = LinearFunction.new(params[:linear_function])
 
     respond_to do |format|
       if @function.save

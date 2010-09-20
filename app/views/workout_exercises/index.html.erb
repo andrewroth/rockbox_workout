@@ -12,8 +12,8 @@
 
 <% @workout_exercises.each do |workout_exercise| %>
   <tr>
-    <td><%= workout_exercise.workout_id %></td>
-    <td><%= workout_exercise.exercise_id %></td>
+    <td><%= workout_exercise.workout.try(:name) %></td>
+    <td><%= workout_exercise.exercise.try(:name) %></td>
     <td><%= workout_exercise.position %></td>
     <td><%= link_to 'Show', workout_exercise %></td>
     <td><%= link_to 'Edit', edit_workout_exercise_path(workout_exercise) %></td>

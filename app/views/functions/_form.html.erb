@@ -12,8 +12,18 @@
   <% end %>
 
   <div class="field">
+    <%= f.label :exercise_set_id %><br />
+    <%= f.collection_select :exercise_set_id, ExerciseSet.all, :id, :name_with_exercise %>
+  </div>
+  <!--
+  <div class="field">
     <%= f.label :type %><br />
     <%= f.text_field :type %>
+  </div>
+  -->
+  <div class="field">
+    <%= f.label :variable %><br />
+    <%= f.text_field :variable %>
   </div>
   <div class="field">
     <%= f.label :base %><br />

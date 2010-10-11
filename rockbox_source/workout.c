@@ -38,6 +38,7 @@ PLUGIN_HEADER
 #define MAX_EXERCISES			512
 #define MAX_SETS_PER_EXERCISE		12
 #define	MAX_EXERCISE_SETS		MAX_EXERCISES*MAX_SETS_PER_EXERCISE
+#define	MAX_BUFFERS			2
 
 /* colors */
 #define	LCD_RED			LCD_RGBPACK(255, 0, 0)
@@ -60,6 +61,8 @@ PLUGIN_HEADER
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
 #define	WORKOUT_ROWS			5
+#define	WORKOUT_SET_WIDTH		60
+#define	WORKOUT_SET_MARGIN		5
 
 /* menu more/less indicators - little triangle that designates more entries in a list */
 #define	MENU_MORE_WIDTH		8
@@ -116,8 +119,10 @@ void draw_menu_more(int mid_x, int mid_y, bool filled, bool down);
 void set_screen_to_workout_menu();
 void set_screen_to_workout();
 void draw_workout();
+void draw_workout_buffer();
 void init_debug();
 void debug(char *s);
+void copy_screen_to_buffer();
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -131,6 +136,8 @@ int num_exercises;
 #define	WORKOUT		2
 
 /* globals */
+char buffers[MAX_BUFFERS][LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH];
+int next_free_buffer = 0;
 int workout_menu_selected_row = 0;
 int workout_menu_top_item_index = 0;
 int workout_top_item_index = 0;
@@ -150,9 +157,9 @@ enum plugin_status plugin_start(const void* parameter) {
 	clear_screen();
 
 	/* viewport test */
-	char store[LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH];
-	rb->lcd_putsxy(0, 0, "PUTS");
-	rb->memcpy(store, rb->lcd_framebuffer, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
+	//char store[LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH];
+	//rb->lcd_putsxy(0, 0, "PUTS");
+	//rb->memcpy(store, rb->lcd_framebuffer, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
 	/* end viewport test */
 
 	scroll_fwd = scroll_back = false;
@@ -178,7 +185,7 @@ enum plugin_status plugin_start(const void* parameter) {
 			draw_workout();
 		}
 
-		rb->memcpy(rb->lcd_framebuffer, store, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
+		//rb->memcpy(rb->lcd_framebuffer, store, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
 		rb->lcd_update();
 
 		scroll_fwd = scroll_back = false;
@@ -247,13 +254,13 @@ void set_screen_to_workout() {
 void setup_fake_data() {
 	/* sets */
 	exercise_sets[0].exercise_id = 0;
-	rb->strcpy(exercises[0].name, "A1");
+	rb->strcpy(exercise_sets[0].name, "A1");
 	exercise_sets[0].position = 0;
 	exercise_sets[1].exercise_id = 0;
-	rb->strcpy(exercises[1].name, "A2");
+	rb->strcpy(exercise_sets[1].name, "A2");
 	exercise_sets[1].position = 1;
 	exercise_sets[2].exercise_id = 0;
-	rb->strcpy(exercises[2].name, "A3");
+	rb->strcpy(exercise_sets[2].name, "A3");
 	exercise_sets[2].position = 2;
 
 	/* exercises */
@@ -346,8 +353,17 @@ void draw_workout_menu() {
 }
 
 void draw_workout() {
-	int i, x, y, half_row, title_width;
+	draw_workout_buffer();
+}
+
+void draw_workout_buffer() {
+	int row, i, j, x, y, half_row, title_width;
 	bool at_top, at_bottom;
+	char set_line[STR_LEN];
+	exercise_set *curr_set;
+	
+	/* reset buffers, they will be rendered again from here */
+	next_free_buffer = 0;
 
 	rb->lcd_set_foreground(WORKOUT_COLOR);
 	x = WORKOUT_MARGIN;
@@ -370,10 +386,10 @@ void draw_workout() {
 
 	/* menu */
 	y += WORKOUT_ROW_HEIGHT + half_row;
-	sprintf(debug_line, "In workout view render.  Current workout: %s; num exc: %l", curr_workout->name, curr_workout->num_exercises);
+	sprintf(debug_line, "In workout view render.  Current workout: %s; num exc: %ld", curr_workout->name, curr_workout->num_exercises);
 	debug(debug_line);
-	for (i = 0; i < WORKOUT_ROWS && i + workout_top_item_index < curr_workout->num_exercises;
-			i++, y += WORKOUT_ROW_HEIGHT) {
+	row = 0;
+	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += WORKOUT_ROW_HEIGHT) {
 		debug("In workout view render loop.");
 		// clear out the row with a solid color first
 		rb->lcd_set_foreground(BACKGROUND_COLOR);
@@ -384,8 +400,36 @@ void draw_workout() {
 	//	} else {
 			rb->lcd_set_foreground(WORKOUT_COLOR);
 	//	}
-		// row text
+
+		/* exercise text */
 		rb->lcd_putsxy(WORKOUT_MARGIN, y, curr_workout->exercises[i + workout_top_item_index]->name);
+
+		/* exercise sets */
+		row++;
+		y += WORKOUT_ROW_HEIGHT;
+		for (j = 0; j < curr_workout->exercises[i + workout_top_item_index]->num_sets; j++) {
+			curr_set = curr_workout->exercises[i + workout_top_item_index]->sets[j];
+			x = j * WORKOUT_SET_WIDTH + WORKOUT_MARGIN + WORKOUT_SET_MARGIN;
+			sprintf(set_line, "%s %dx%d", curr_set->name, 0, 0);
+			rb->lcd_putsxy(x, y, set_line);
+		}
+
+		if (row == WORKOUT_ROWS) {
+			copy_screen_to_buffer();
+			row = 0;
+			y = 0;
+		}
+	}
+	copy_screen_to_buffer();
+}
+
+void copy_screen_to_buffer() {
+	if (next_free_buffer == MAX_BUFFERS) {
+		debug("ERROR: out of buffers!");
+	} else {
+		rb->memcpy(buffers[next_free_buffer], 
+				rb->lcd_framebuffer, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
+		next_free_buffer++;
 	}
 }
 

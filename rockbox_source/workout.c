@@ -251,11 +251,9 @@ void set_screen_to_workout() {
 	debug("Screen switch to workout view");
 	if (app_current_screen == WORKOUT_MENU) {
 		curr_workout = workouts + workout_menu_selected_row;
-		if (curr_workout->num_exercises > 0 && curr_workout->exercises[0]->num_sets > 0) {
+		if (curr_workout->num_exercises > 0) {
 			workout_selected_exercise = curr_workout->exercises[0];
 			workout_selected_exercise_index = 0;
-			workout_selected_set = curr_workout->exercises[0]->sets[0];
-			workout_selected_set_index = 0;
 		}
 	}
 	app_current_screen = WORKOUT;
@@ -322,88 +320,94 @@ void workout_menu_back() {
 	workout_menu_top_item_index = MIN(workout_menu_selected_row, workout_menu_top_item_index);
 }
 
-void workout_next_exercise() {
+/* tries to move forward one set.  return true if successful, false if at the last set of the current set */
+bool workout_fwd_set() {
+	if (workout_selected_set_index < workout_selected_exercise->num_sets - 1) {
+		workout_selected_set++;
+		workout_selected_set_index++;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* tries to move forward one exercise.  returns true if successful, false if at the last exercise */
+bool workout_fwd_exercise() {
 	if (workout_selected_exercise_index < curr_workout->num_exercises - 1) {
-		debug("workout_fwd I");
 		workout_selected_exercise_index++;
 		workout_selected_exercise++;
-		workout_selected_set = NULL;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* tries to move backward one set.  return true if successful, false if at the last set of the current set */
+bool workout_back_set() {
+	if (workout_selected_set_index > 0) {
+		workout_selected_set--;
+		workout_selected_set_index--;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* tries to move backward one exercise.  returns true if successful, false if at the last exercise */
+bool workout_back_exercise() {
+	if (workout_selected_exercise_index > 0) {
+		workout_selected_exercise_index--;
+		workout_selected_exercise--;
+		return true;
+	} else {
+		return false;
 	}
 }
 
 void workout_fwd() {
-	debug("workout_fwd A");
-	sprintf(debug_line, "workout_selected_exercise_index: %d", workout_selected_exercise_index);
-	debug(debug_line);
-
-	/* if no exercise selected, go to the first exercise */
+	/* if workout_selected_exercise isn't set by this point, we can safely assume there are no exercises */
 	if (workout_selected_exercise == NULL) {
-		debug("workout_fwd B");
-		if (curr_workout->num_exercises > 0) {
-			debug("workout_fwd C");
-			/* default to first */
-			workout_selected_exercise = curr_workout->exercises[0];
-			workout_selected_exercise_index = 0;
-		}
-		/* force the next section to go to the first set */
-		workout_selected_set = NULL; 
+		return;
 	}
 
-	/* if no set selected, go to the first set */
-	if (workout_selected_set == NULL) {
-		debug("workout_fwd D");
-		if (curr_workout->num_exercises > 0 && curr_workout->exercises[0]->num_sets > 0) {
-			debug("workout_fwd E");
-			workout_selected_set = curr_workout->exercises[0]->sets[0];
+	/* if no set is chosen, go to the first set, or go on to the next exercise if no sets */
+	if (workout_selected_exercise != NULL && workout_selected_set == NULL) {
+		if (workout_selected_exercise->num_sets > 0) {
+			workout_selected_set = workout_selected_exercise->sets[0];
 			workout_selected_set_index = 0;
-		} else {
-			debug("workout_fwd F");
-			workout_next_exercise();
+		} else if (workout_fwd_exercise()) {
+			workout_fwd();
 		}
 		return;
 	}
 
-	/* move to the next set, jumping to the next exercise if necessary */
-	if (workout_selected_set_index < workout_selected_exercise->num_sets - 1) {
-		debug("workout_fwd G");
-		/* easy case - move set forward one */
-		workout_selected_set_index++;
-		workout_selected_set++;
-	} else {
-		debug("workout_fwd H");
-		/* jump to first set of next exercise, if possible */
-		workout_next_exercise();
-	}
-}
-
-void workout_back_exercise() {
-	if (workout_selected_exercise_index > 0) {
-		workout_selected_exercise_index--;
-		workout_selected_exercise--;
+	/* otherwise move the set forward one or jump to the next exercise. */
+	if (!workout_fwd_set() && workout_fwd_exercise()) {
 		workout_selected_set = NULL;
 	}
 }
 
 void workout_back() {
-	/* if no exercise selected, go to the first exercise */
+	int ns;
+
+	/* if workout_selected_exercise isn't set by this point, we can safely assume there are no exercises */
 	if (workout_selected_exercise == NULL) {
-		workout_fwd(); // in this case, we can use workout fwd to do the same thing
+		return;
 	}
-	/* if no set selected, go to the last set */
-	if (workout_selected_set == NULL) {
-		if (workout_selected_exercise->num_sets > 0) {
-			workout_selected_set = workout_selected_exercise->sets[workout_selected_exercise->num_sets-1];
-		} else {
-			workout_back_exercise();
+
+	/* if no set is chosen but there is an exercise chosen, go backwards to the last set of the next exercise */
+	if (workout_selected_exercise != NULL && workout_selected_set == NULL) {
+		if (workout_back_exercise()) {
+			ns = workout_selected_exercise->num_sets;
+			workout_selected_set = workout_selected_exercise->sets[ns-1];
+			workout_selected_set_index = ns-1;
 		}
 		return;
 	}
-	/* move the set back if possible, or jump to the previous exercise */
-	if (workout_selected_set_index > 0) {
-		workout_selected_set_index--;
-		workout_selected_set--;
-	} else {
-		workout_back_exercise();
+
+	/* otherwise move the set backward one, or jump to the exercise only */
+	if (!workout_back_set()) {
+		workout_selected_set = NULL;
 	}
 }
 
@@ -456,6 +460,7 @@ void draw_workout_buffer() {
 	int row, i, j, x, y, c, half_row, title_width;
 	bool at_top, at_bottom;
 	char set_line[STR_LEN];
+	exercise* curr_exercise;
 	exercise_set *curr_set;
 	
 	/* reset buffers, they will be rendered again from here */
@@ -486,6 +491,7 @@ void draw_workout_buffer() {
 	debug(debug_line);
 	row = 0;
 	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += WORKOUT_ROW_HEIGHT) {
+		curr_exercise = curr_workout->exercises[i + workout_top_item_index];
 		debug("In workout view render loop.");
 		// clear out the row with a solid color first
 		rb->lcd_set_foreground(BACKGROUND_COLOR);
@@ -493,7 +499,12 @@ void draw_workout_buffer() {
 
 		/* exercise text */
 		rb->lcd_set_foreground(WORKOUT_COLOR);
-		rb->lcd_putsxy(WORKOUT_MARGIN, y, curr_workout->exercises[i + workout_top_item_index]->name);
+		rb->lcd_putsxy(WORKOUT_MARGIN + 1, y, curr_exercise->name);
+
+		/* draw box around it if selected */
+		if (workout_selected_set == NULL && workout_selected_exercise == curr_exercise) {
+			rb->lcd_drawrect(WORKOUT_MARGIN, y, SCREEN_WIDTH - WORKOUT_MARGIN * 2, WORKOUT_ROW_HEIGHT - 1);
+		}
 
 		/* exercise sets */
 		row++;

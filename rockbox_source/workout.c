@@ -126,6 +126,7 @@ void draw_workout_buffer();
 void init_debug();
 void debug(char *s);
 void copy_screen_to_buffer();
+void load_csvs();
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -159,8 +160,10 @@ enum plugin_status plugin_start(const void* parameter) {
 	bool scroll_fwd, scroll_back;
 
 	init_debug();
+	debug("=====================================================");
 	debug("Program startup");
 	setup_fake_data();
+	load_csvs();
 	clear_screen();
 
 	/* viewport test */
@@ -595,19 +598,31 @@ void draw_menu_more(int mid_x, int mid_y, bool more, bool down) {
 	}
 }
 
-int read_csv(char *name) {
-	if (name[0] == 'a') {
-	}
-	return 1;
-	/*
-	char line[STR_LEN], cname[STR_LEN], type[STR_LEN], value[STR_LEN];
-	FILE *f;
-	unsigned int i, last, section;
+void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+	sprintf(debug_line, "name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+	debug(debug_line);
+}
 
-	f = fopen(name, "r");
-	while (!feof(f)) {
-		fgets(line, 256, f);
-		printf(line);
+void load_csvs() {
+	load_workouts();
+}
+
+void load_workouts() {
+	read_csv("/workout/workouts.csv", workout_loaded);
+}
+
+int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR_LEN])) {
+	char line[STR_LEN], cname[STR_LEN], type[STR_LEN], value[STR_LEN];
+	unsigned int i, last, section;
+	int fd;
+
+	sprintf(debug_line, "read_csv START: %s", name);
+	debug(debug_line);
+	fd = rb->open("/workout/workouts.csv", O_RDONLY);
+	debug(debug_line);
+
+	while (rb->read_line(fd, line, 256) > 0) {
+		debug(line);
 
 		// split by commas
 		section = last = 0;
@@ -628,10 +643,14 @@ int read_csv(char *name) {
 			}
 		}
 
-		printf("name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+		//printf("name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+		(*callback)(cname, type, value);
 	}
 
+	rb->close(fd)
+	sprintf(debug_line, "read_csv END: %s", name);
+	debug(debug_line);
+
 	return true;
-	*/
 }
 

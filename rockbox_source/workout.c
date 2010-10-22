@@ -601,6 +601,14 @@ void draw_menu_more(int mid_x, int mid_y, bool more, bool down) {
 void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	sprintf(debug_line, "name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
+	if (rb->strcmp(cname, "id") == 0) {
+		debug("NEW WORKOUT");
+		num_workouts++;
+		workouts[num_workouts-1].id = rb->atoi(value);
+	} else if (rb->strcmp(cname, "name") == 0) {
+		debug("COPY NAME");
+		rb->strcpy(workouts[num_workouts-1].name, value);
+	}
 }
 
 void load_csvs() {
@@ -619,13 +627,13 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 	sprintf(debug_line, "read_csv START: %s", name);
 	debug(debug_line);
 	fd = rb->open("/workout/workouts.csv", O_RDONLY);
-	debug(debug_line);
 
-	while (rb->read_line(fd, line, 256) > 0) {
+	while (rb->read_line(fd, line, STR_LEN - 1) > 0) {
 		debug(line);
 
 		// split by commas
 		section = last = 0;
+		value[0] = 0;
 		for (i = 0; i < strlen(line); i++) {
 			if (line[i] == ',' || i == strlen(line) - 1) {
 				if (section == 0) {
@@ -635,8 +643,8 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 					strncpy(type, line + last, i - last);
 					type[i - last] = 0;
 				} else if (section == 2) {
-					strncpy(value, line + last, i - last);
-					value[i - last] = 0;
+					strncpy(value, line + last, i - last + 1);
+					value[i - last + 1] = 0;
 				}
 				section++;
 				last = i + 1;
@@ -647,7 +655,7 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 		(*callback)(cname, type, value);
 	}
 
-	rb->close(fd)
+	rb->close(fd);
 	sprintf(debug_line, "read_csv END: %s", name);
 	debug(debug_line);
 

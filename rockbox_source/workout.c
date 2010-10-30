@@ -31,14 +31,14 @@ Andrew Roth
 
 PLUGIN_HEADER
 
-#define STR_LEN          		256
+#define STR_LEN          		48
 #define TXT_LEN          		1024
-#define MAX_WORKOUTS     		48
-#define MAX_EXERCISES_PER_WORKOUT	48
-#define MAX_EXERCISES			512
-#define MAX_SETS_PER_EXERCISE		12
+#define MAX_WORKOUTS     		10
+#define MAX_EXERCISES_PER_WORKOUT	10
+#define MAX_EXERCISES			50
+#define MAX_SETS_PER_EXERCISE		10
 #define	MAX_EXERCISE_SETS		MAX_EXERCISES*MAX_SETS_PER_EXERCISE
-#define	MAX_BUFFERS			2
+#define	MAX_BUFFERS			0
 
 /* colors */
 #define	LCD_RED			LCD_RGBPACK(255, 0, 0)
@@ -127,6 +127,7 @@ void init_debug();
 void debug(char *s);
 void copy_screen_to_buffer();
 void load_csvs();
+void load_workouts();
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -149,6 +150,7 @@ workout *curr_workout;
 int app_current_screen = WORKOUT_MENU;
 int debug_fd;
 char debug_line[STR_LEN];
+char *debug_line_ptr = debug_line;
 exercise *workout_selected_exercise = NULL;
 int workout_selected_exercise_index;
 exercise_set *workout_selected_set = NULL;
@@ -490,7 +492,7 @@ void draw_workout_buffer() {
 
 	/* menu */
 	y += WORKOUT_ROW_HEIGHT + half_row;
-	sprintf(debug_line, "In workout view render.  Current workout: %s; num exc: %ld", curr_workout->name, curr_workout->num_exercises);
+	rb->snprintf(debug_line_ptr, STR_LEN, "In workout view render.  Current workout: %s; num exc: %ld", curr_workout->name, curr_workout->num_exercises);
 	debug(debug_line);
 	row = 0;
 	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += WORKOUT_ROW_HEIGHT) {
@@ -523,12 +525,12 @@ void draw_workout_buffer() {
 
 			/* draw set */
 			rb->lcd_set_foreground(WORKOUT_COLOR);
-			sprintf(set_line, "%s %dx%d", curr_set->name, 0, 0);
+			rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, 0, 0);
 			rb->lcd_putsxy(x + 1, y + 1, set_line);
 
 			/* draw box around it if selected */
 			if (workout_selected_set == curr_set) {
-				sprintf(set_line, "   select set %s", curr_set->name);
+				rb->snprintf(set_line, STR_LEN, "   select set %s", curr_set->name);
 				debug(set_line);
 				rb->lcd_drawrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT - 1);
 			}
@@ -599,7 +601,7 @@ void draw_menu_more(int mid_x, int mid_y, bool more, bool down) {
 }
 
 void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
-	sprintf(debug_line, "name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+	rb->snprintf(debug_line_ptr, STR_LEN, "name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW WORKOUT");
@@ -624,7 +626,7 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 	unsigned int i, last, section;
 	int fd;
 
-	sprintf(debug_line, "read_csv START: %s", name);
+	rb->snprintf(debug_line_ptr, STR_LEN, "read_csv START: %s", name);
 	debug(debug_line);
 	fd = rb->open("/workout/workouts.csv", O_RDONLY);
 
@@ -634,8 +636,8 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 		// split by commas
 		section = last = 0;
 		value[0] = 0;
-		for (i = 0; i < strlen(line); i++) {
-			if (line[i] == ',' || i == strlen(line) - 1) {
+		for (i = 0; i < rb->strlen(line); i++) {
+			if (line[i] == ',' || i == rb->strlen(line) - 1) {
 				if (section == 0) {
 					strncpy(cname, line + last, i - last);
 					cname[i - last] = 0;
@@ -656,7 +658,7 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 	}
 
 	rb->close(fd);
-	sprintf(debug_line, "read_csv END: %s", name);
+	rb->snprintf(debug_line_ptr, STR_LEN, "read_csv END: %s", name);
 	debug(debug_line);
 
 	return true;

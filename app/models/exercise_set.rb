@@ -1,4 +1,6 @@
 class ExerciseSet < ActiveRecord::Base
+  include Csv
+
   belongs_to :exercise
 
   def name_with_exercise

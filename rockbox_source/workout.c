@@ -77,6 +77,7 @@ PLUGIN_HEADER
 
 /* workout structures */
 typedef struct {
+	long id;
 	char name[STR_LEN];
 	long position;
 	long exercise_id;
@@ -181,6 +182,7 @@ int num_workouts = 0;
 int num_workout_dates = 0;
 int num_exercises = 0;
 int num_workout_exercises = 0;
+int num_exercise_sets = 0;
 
 /* screens */
 #define	WORKOUT_MENU	1
@@ -604,8 +606,7 @@ void draw_workout_buffer() {
 
 			/* draw box around it if selected */
 			if (workout_selected_set == curr_set) {
-				rb->snprintf(set_line, STR_LEN, "   select set %s", curr_set->name);
-				debug(set_line);
+				debug_print("   select set %s", curr_set->name);
 				rb->lcd_drawrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT - 1);
 			}
 
@@ -681,6 +682,8 @@ void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN
 		debug("NEW WORKOUT");
 		num_workouts++;
 		workouts[num_workouts-1].id = rb->atoi(value);
+		// inits
+		workouts[num_workouts-1].num_exercises = 0;
 	} else if (rb->strcmp(cname, "name") == 0) {
 		debug("COPY NAME");
 		rb->strcpy(workouts[num_workouts-1].name, value);
@@ -694,6 +697,8 @@ void *exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LE
 		debug("NEW EXERCISE");
 		num_exercises++;
 		exercises[num_exercises-1].id = rb->atoi(value);
+		// inits
+		exercises[num_exercises-1].num_sets = 0;
 	} else if (rb->strcmp(cname, "name") == 0) {
 		debug("COPY NAME");
 		rb->strcpy(exercises[num_exercises-1].name, value);
@@ -702,7 +707,7 @@ void *exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LE
 }
 
 void *workout_exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
-	debug_print("workout exercise loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+	debug_print("workout_exercise loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW WORKOUT EXERCISE");
 		num_workout_exercises++;
@@ -715,6 +720,25 @@ void *workout_exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char valu
 		exercise *e = find_exercise(workout_exercises[num_workout_exercises-1].exercise_id);
 		w->num_exercises++;
 		w->exercises[w->num_exercises-1] = e;
+	}
+
+	return false;
+}
+
+void *exercise_set_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+	debug_print("workout_exercise_set loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
+	if (rb->strcmp(cname, "id") == 0) {
+		debug("NEW WORKOUT EXERCISE SET");
+		num_exercise_sets++;
+		exercise_sets[num_exercise_sets-1].id = rb->atoi(value);
+	} else if (rb->strcmp(cname, "name") == 0) {
+		debug("COPY NAME");
+		rb->strcpy(exercise_sets[num_exercise_sets-1].name, value);
+	} else if (rb->strcmp(cname, "exercise_id") == 0) {
+		exercise_sets[num_exercise_sets-1].exercise_id = rb->atoi(value);
+		exercise *e = find_exercise(exercise_sets[num_exercise_sets-1].exercise_id);
+		e->num_sets++;
+		e->sets[e->num_sets-1] = exercise_sets + num_exercise_sets - 1;
 	}
 
 	return false;
@@ -797,6 +821,10 @@ void load_workout_exercises() {
 	read_csv("/workout/workout_exercises.csv", workout_exercise_loaded);
 }
 
+void load_exercise_sets() {
+	read_csv("/workout/exercise_sets.csv", exercise_set_loaded);
+}
+
 void load_workout_dates() {
 	read_csv("/workout/workout_dates.csv", workout_date_loaded);
 }
@@ -817,6 +845,7 @@ void load_csvs() {
 	load_workouts();
 	load_exercises();
 	load_workout_exercises();
+	load_exercise_sets();
 	load_workout_dates();
 }
 

@@ -12,7 +12,7 @@
 <% @workout_dates.each do |workout_date| %>
   <tr>
     <td><%= workout_date.when %></td>
-    <td><%= workout_date.workout_id %></td>
+    <td><%= workout_date.workout.name %></td>
     <td><%= link_to 'Show', workout_date %></td>
     <td><%= link_to 'Edit', edit_workout_date_path(workout_date) %></td>
     <td><%= link_to 'Destroy', workout_date, :confirm => 'Are you sure?', :method => :delete %></td>

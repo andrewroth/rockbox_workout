@@ -110,24 +110,28 @@ typedef struct {
 	long exercise_id;
 } workout_exercise;
 
-typedef struct {
+typedef struct workout_log_entry_s workout_log_entry;
+typedef struct workout_date_s workout_date;
+
+struct workout_date_s {
 	char when[STR_LEN];
 	long when_int;
 	workout *workout;
+	workout_log_entry *workout_log_entry;
 	long created_at;
 	long updated_at;
-} workout_date;
+};
 
-typedef struct {
+struct workout_log_entry_s {
 	long created_at;
 	workout_date *workout_date;
 	workout *workout;
-} workout_log_entry;
+};
 
 typedef struct {
 	long created_at;
 	workout_log_entry *workout_log_entry;
-	workout_exercise *workout_exercise;
+	exercise *exercise;
 } exercise_log_entry;
 
 typedef struct {
@@ -183,6 +187,13 @@ int num_workout_dates = 0;
 int num_exercises = 0;
 int num_workout_exercises = 0;
 int num_exercise_sets = 0;
+int num_workout_log_entries = 0;
+int num_exercise_log_entries = 0;
+
+/* finders */
+exercise_log_entry *find_exercise_log_entry(workout_log_entry *wle, exercise *e);
+workout *find_workout(long id);
+exercise *find_exercise(long id);
 
 /* screens */
 #define	WORKOUT_MENU	1
@@ -195,6 +206,7 @@ int workout_menu_selected_row = 0;
 int workout_menu_top_item_index = 0;
 int workout_top_item_index = 0;
 workout *curr_workout;
+workout_date *curr_workout_date;
 int app_current_screen = WORKOUT_MENU;
 int debug_fd;
 char debug_line[TXT_LEN];
@@ -323,7 +335,15 @@ void set_screen_to_workout_menu() {
 void set_screen_to_workout() {
 	debug("Screen switch to workout view");
 	if (app_current_screen == WORKOUT_MENU) {
-		curr_workout = workouts + workout_menu_selected_row;
+		curr_workout_date = workout_dates + workout_menu_selected_row;
+		curr_workout = curr_workout_date->workout;
+		curr_workout_date->workout = curr_workout;
+		// make a new workout_log_entry unless one exists
+		if (curr_workout_date->workout_log_entry == NULL) {
+			num_workout_log_entries++;
+			debug_print("New workout log entry");
+			curr_workout_date->workout_log_entry = workout_log_entries + num_workout_log_entries - 1;
+		}
 		if (curr_workout->num_exercises > 0) {
 			workout_selected_exercise = curr_workout->exercises[0];
 			workout_selected_exercise_index = 0;
@@ -752,6 +772,7 @@ void *workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[ST
 		debug("NEW WORKOUT DATE");
 		num_workout_dates++;
 		//workout_dates[num_workout_dates-1].id = rb->atoi(value);
+		workout_dates[num_workout_dates-1].workout_log_entry = NULL;
 	} else if (rb->strcmp(cname, "workout_id") == 0) {
 		debug("COPY workout_id");
 		//workout_dates[num_workout_dates-1].workout_id = rb->atoi(value);
@@ -892,5 +913,17 @@ int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR
 	//debug(debug_line);
 
 	return true;
+}
+
+exercise_log_entry *find_exercise_log_entry(workout_log_entry *wle, exercise *e) {
+	exercise_log_entry *ele;
+	int i;
+	for (i = 0; i < num_exercise_log_entries; i++) {
+		ele = exercise_log_entries + i;
+		if (ele->workout_log_entry == wle && ele->exercise == e) {
+			return ele;
+		}
+	}
+	return NULL;
 }
 

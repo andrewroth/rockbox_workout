@@ -27,6 +27,7 @@ Andrew Roth
 #include "stdio.h"
 #include "plugin.h"
 #include "string.h"
+#include "time.h"
 #include "lib/xlcd.h"
 
 PLUGIN_HEADER
@@ -49,6 +50,8 @@ PLUGIN_HEADER
 /* colors */
 #define	LCD_RED			LCD_RGBPACK(255, 0, 0)
 #define	LCD_BLUE		LCD_RGBPACK(0, 0, 255)
+#define	LCD_ORANGE		LCD_RGBPACK(255, 165, 0)
+#define	LCD_GREEN		LCD_RGBPACK(0, 255, 0)
 #define	BACKGROUND_COLOR	LCD_BLACK
 
 /* choose a workout menu defines */
@@ -63,6 +66,8 @@ PLUGIN_HEADER
 
 /* workout menu itself */
 #define WORKOUT_COLOR			LCD_RED
+#define WORKOUT_INPROGRESS_COLOR	LCD_ORANGE
+#define WORKOUT_COMPLETED_COLOR		LCD_GREEN
 #define	WORKOUT_MARGIN			5
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
@@ -124,18 +129,21 @@ struct workout_date_s {
 
 struct workout_log_entry_s {
 	long created_at;
+	long completed_at;
 	workout_date *workout_date;
 	workout *workout;
 };
 
 typedef struct {
 	long created_at;
+	long completed_at;
 	workout_log_entry *workout_log_entry;
 	exercise *exercise;
 } exercise_log_entry;
 
 typedef struct {
 	long created_at;
+	long completed_at;
 	exercise_log_entry *exercise_log_entry;
 	long n;
 	long position;
@@ -154,24 +162,24 @@ typedef struct {
 } function;
 
 /* method stubs */
-void clear_screen();
-void setup_fake_data();
-void draw_workout_menu();
-void workout_menu_fwd();
-void workout_menu_back();
-void workout_fwd();
-void workout_back();
-int read_csv();
+void clear_screen(void);
+void setup_fake_data(void);
+void draw_workout_menu(void);
+void workout_menu_fwd(void);
+void workout_menu_back(void);
+void workout_fwd(void);
+void workout_back(void);
+int read_csv(char *name, void (*callback)(char[STR_LEN], char[STR_LEN], char[STR_LEN]));
 void draw_menu_more(int mid_x, int mid_y, bool filled, bool down);
-void set_screen_to_workout_menu();
-void set_screen_to_workout();
-void draw_workout();
-void draw_workout_buffer();
-void init_debug();
+void set_screen_to_workout_menu(void);
+void set_screen_to_workout(void);
+void draw_workout(void);
+void draw_workout_buffer(void);
+void init_debug(void);
 void debug(char *s);
-void copy_screen_to_buffer();
-void load_csvs();
-void load_workouts();
+void copy_screen_to_buffer(void);
+void load_csvs(void);
+void load_workouts(void);
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -224,6 +232,7 @@ enum plugin_status plugin_start(const void* parameter) {
 	init_debug();
 	debug("=====================================================");
 	debug("Program startup");
+	debug_print("current time: %ld", (long)rb->get_time());
 	setup_fake_data();
 	load_csvs();
 	clear_screen();
@@ -333,6 +342,8 @@ void set_screen_to_workout_menu() {
 }
 
 void set_screen_to_workout() {
+	exercise *e;
+
 	debug("Screen switch to workout view");
 	if (app_current_screen == WORKOUT_MENU) {
 		curr_workout_date = workout_dates + workout_menu_selected_row;
@@ -343,17 +354,25 @@ void set_screen_to_workout() {
 			num_workout_log_entries++;
 			debug_print("New workout log entry");
 			curr_workout_date->workout_log_entry = workout_log_entries + num_workout_log_entries - 1;
+			curr_workout_date->workout_log_entry->created_at = (long)rb->get_time();
 		}
 		if (curr_workout->num_exercises > 0) {
 			workout_selected_exercise = curr_workout->exercises[0];
 			workout_selected_exercise_index = 0;
+
+			// set exercise_log_entry of the first exercise
+			e = curr_workout->exercises[0];
+			ele = find_exercise_log_entry(curr_workout_date->workout_log_entry, e);
+			if (ele == NULL) {
+				// make new ele here
+			}
 		}
 	}
 	app_current_screen = WORKOUT;
 	clear_screen();
 }
 
-void setup_fake_data() {
+void setup_fake_data(void) {
 	/* sets */
 	/*
 	exercise_sets[0].exercise_id = 0;
@@ -420,7 +439,7 @@ void workout_menu_back() {
 }
 
 /* tries to move forward one set.  return true if successful, false if at the last set of the current set */
-bool workout_fwd_set() {
+bool workout_fwd_set(void) {
 	if (workout_selected_set_index < workout_selected_exercise->num_sets - 1) {
 		workout_selected_set++;
 		workout_selected_set_index++;
@@ -431,7 +450,7 @@ bool workout_fwd_set() {
 }
 
 /* tries to move forward one exercise.  returns true if successful, false if at the last exercise */
-bool workout_fwd_exercise() {
+bool workout_fwd_exercise(void) {
 	if (workout_selected_exercise_index < curr_workout->num_exercises - 1) {
 		workout_selected_exercise_index++;
 		workout_selected_exercise++;
@@ -442,7 +461,7 @@ bool workout_fwd_exercise() {
 }
 
 /* tries to move backward one set.  return true if successful, false if at the last set of the current set */
-bool workout_back_set() {
+bool workout_back_set(void) {
 	if (workout_selected_set_index > 0) {
 		workout_selected_set--;
 		workout_selected_set_index--;
@@ -453,7 +472,7 @@ bool workout_back_set() {
 }
 
 /* tries to move backward one exercise.  returns true if successful, false if at the last exercise */
-bool workout_back_exercise() {
+bool workout_back_exercise(void) {
 	if (workout_selected_exercise_index > 0) {
 		workout_selected_exercise_index--;
 		workout_selected_exercise--;
@@ -563,6 +582,7 @@ void draw_workout_buffer() {
 	char set_line[STR_LEN];
 	exercise* curr_exercise;
 	exercise_set *curr_set;
+	exercise_log_entry *exercise_log_entry;
 	
 	/* reset buffers, they will be rendered again from here */
 	next_free_buffer = 0;
@@ -593,13 +613,23 @@ void draw_workout_buffer() {
 	row = 0;
 	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += WORKOUT_ROW_HEIGHT) {
 		curr_exercise = curr_workout->exercises[i + workout_top_item_index];
+
+		// find exercise log
+		exercise_log_entry = find_exercise_log_entry(curr_workout_date->workout_log_entry, curr_exercise);
+
 		debug("In workout view render loop.");
 		// clear out the row with a solid color first
 		rb->lcd_set_foreground(BACKGROUND_COLOR);
 		rb->lcd_fillrect(0, y, SCREEN_WIDTH, WORKOUT_ROW_HEIGHT);
 
 		/* exercise text */
-		rb->lcd_set_foreground(WORKOUT_COLOR);
+		if (exercise_log_entry == NULL || exercise_log_entry->created_at == 0) {
+			rb->lcd_set_foreground(WORKOUT_COLOR);
+		} else if (exercise_log_entry != NULL && exercise_log_entry->created_at != 0 && exercise_log_entry->completed_at == 0) {
+			rb->lcd_set_foreground(WORKOUT_INPROGRESS_COLOR);
+		} else if (exercise_log_entry != NULL && exercise_log_entry->created_at != 0 && exercise_log_entry->completed_at != 0) {
+			rb->lcd_set_foreground(WORKOUT_COMPLETED_COLOR);
+		}
 		rb->lcd_putsxy(WORKOUT_MARGIN + 1, y, curr_exercise->name);
 
 		/* draw box around it if selected */
@@ -695,7 +725,7 @@ void draw_menu_more(int mid_x, int mid_y, bool more, bool down) {
 	}
 }
 
-void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	rb->snprintf(debug_line_ptr, STR_LEN, "workout_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	if (rb->strcmp(cname, "id") == 0) {
@@ -708,10 +738,9 @@ void *workout_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN
 		debug("COPY NAME");
 		rb->strcpy(workouts[num_workouts-1].name, value);
 	}
-	return false;
 }
 
-void *exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	debug_print("exercise loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW EXERCISE");
@@ -723,10 +752,9 @@ void *exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LE
 		debug("COPY NAME");
 		rb->strcpy(exercises[num_exercises-1].name, value);
 	}
-	return false;
 }
 
-void *workout_exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void workout_exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	debug_print("workout_exercise loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW WORKOUT EXERCISE");
@@ -741,11 +769,9 @@ void *workout_exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char valu
 		w->num_exercises++;
 		w->exercises[w->num_exercises-1] = e;
 	}
-
-	return false;
 }
 
-void *exercise_set_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void exercise_set_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	debug_print("workout_exercise_set loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW WORKOUT EXERCISE SET");
@@ -760,11 +786,9 @@ void *exercise_set_loaded(char cname[STR_LEN], char type[STR_LEN], char value[ST
 		e->num_sets++;
 		e->sets[e->num_sets-1] = exercise_sets + num_exercise_sets - 1;
 	}
-
-	return false;
 }
 
-void *workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	//rb->snprintf(debug_line_ptr, STR_LEN, "workout_date_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug_print("workout_date loaded. name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
@@ -782,10 +806,9 @@ void *workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[ST
 		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 10);
 		workout_dates[num_workout_dates-1].when[11] = 0;
 	}
-	return false;
 }
 
-void *workout_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void workout_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	rb->snprintf(debug_line_ptr, STR_LEN, "workout_log_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	/* TODO */
@@ -797,10 +820,9 @@ void *workout_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 		debug("COPY NAME");
 		rb->strcpy(workouts[num_workouts-1].name, value);
 	}
-	return false;
 }
 
-void *exercise_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void exercise_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	rb->snprintf(debug_line_ptr, STR_LEN, "exercise_log_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	/* TODO */
@@ -812,10 +834,9 @@ void *exercise_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[ST
 		debug("COPY NAME");
 		rb->strcpy(workouts[num_workouts-1].name, value);
 	}
-	return false;
 }
 
-void *exercise_set_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+void exercise_set_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	rb->snprintf(debug_line_ptr, STR_LEN, "exercise_set_log_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	/* TODO */
@@ -827,38 +848,37 @@ void *exercise_set_log_loaded(char cname[STR_LEN], char type[STR_LEN], char valu
 		debug("COPY NAME");
 		rb->strcpy(workouts[num_workouts-1].name, value);
 	}
-	return false;
 }
 
-void load_workouts() {
+void load_workouts(void) {
 	read_csv("/workout/workouts.csv", workout_loaded);
 }
 
-void load_exercises() {
+void load_exercises(void) {
 	read_csv("/workout/exercises.csv", exercise_loaded);
 }
 
-void load_workout_exercises() {
+void load_workout_exercises(void) {
 	read_csv("/workout/workout_exercises.csv", workout_exercise_loaded);
 }
 
-void load_exercise_sets() {
+void load_exercise_sets(void) {
 	read_csv("/workout/exercise_sets.csv", exercise_set_loaded);
 }
 
-void load_workout_dates() {
+void load_workout_dates(void) {
 	read_csv("/workout/workout_dates.csv", workout_date_loaded);
 }
 
-void load_workout_logs() {
+void load_workout_logs(void) {
 	read_csv("/workout/workout_logs.csv", workout_log_loaded);
 }
 
-void load_exercise_logs() {
+void load_exercise_logs(void) {
 	read_csv("/workout/exercise_logs.csv", exercise_log_loaded);
 }
 
-void load_exercise_set_logs() {
+void load_exercise_set_logs(void) {
 	read_csv("/workout/exercise_set_logs.csv", exercise_set_log_loaded);
 }
 

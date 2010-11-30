@@ -77,9 +77,14 @@ PLUGIN_HEADER
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
 #define	WORKOUT_ROWS			5
-#define	WORKOUT_SET_WIDTH		60
+#define	WORKOUT_SET_WIDTH		80
 #define	WORKOUT_SET_MARGIN		5
 #define	WORKOUT_SETS_PER_ROW		2
+#define	WORKOUT_DASHBOARD_PERCENT	30.0
+#define	WORKOUT_DASHBOARD_TOP		((100.0-WORKOUT_DASHBOARD_PERCENT)/100.0)*SCREEN_HEIGHT
+#define	WORKOUT_DASHBOARD_PROG_HEIGHT	10
+#define	WORKOUT_DASHBOARD_PROG_LEFT	30
+#define	WORKOUT_DASHBOARD_PROG_TOP	10
 
 /* exercise states */
 #define	NUM_EXERCISE_STATES		4
@@ -201,7 +206,8 @@ void copy_screen_to_buffer(void);
 void load_csvs(void);
 void load_workouts(void);
 long now(void);
-void tick();
+void tick(void);
+void draw_workout_dashboard(void);
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -238,6 +244,7 @@ int app_current_screen = WORKOUT_MENU;
 int playback_state;
 time_t playback_last_state_change;
 bool playback_is_last_set = false;
+long int time_since_last_tick;
 int DEFAULT_SECONDS_ON_STATE[NUM_EXERCISE_STATES] = {
 	5 /* setup */,
 	5 /* inprogress */,
@@ -246,9 +253,9 @@ int DEFAULT_SECONDS_ON_STATE[NUM_EXERCISE_STATES] = {
 };
 char *STATE_STR[NUM_EXERCISE_STATES] = {
 	"setup weight" /* setup */,
-	"in progress" /* inprogress */,
+	"lift!" /* inprogress */,
 	"rest" /* rest */,
-	"done workout" /* done workout */,
+	"done workout." /* done workout */,
 };
 /* exercise playback */
 exercise *playback_exercise = NULL;
@@ -318,7 +325,7 @@ enum plugin_status plugin_start(const void* parameter) {
 		rb->lcd_update();
 
 		scroll_fwd = scroll_back = false;
-		button = rb->button_get_w_tmo(100);
+		button = rb->button_get_w_tmo(25);
 		tick();
 		switch (button) {
 			case BUTTON_POWER:
@@ -351,9 +358,10 @@ void tick() {
 	long int diff;
 
 	if (app_current_screen == WORKOUT) {
-		diff = now() - playback_last_state_change;
+		time_since_last_tick = now() - playback_last_state_change;
+		diff = time_since_last_tick;
 		debug_print("[%s] diff: %ld", STATE_STR[playback_state], diff);
-		if (diff > DEFAULT_SECONDS_ON_STATE[playback_state]) {
+		if (diff >= (float)DEFAULT_SECONDS_ON_STATE[playback_state] + 0.10) {
 			debug_print("MOVE STATE    before = %d [%s]", playback_state, STATE_STR[playback_state]);
 			switch (playback_state) {
 				case EXERCISE_SETTING_UP:
@@ -833,7 +841,44 @@ void draw_workout_buffer() {
 			y = 0;
 		}
 	}
+
+	draw_workout_dashboard();
 	copy_screen_to_buffer();
+}
+
+void draw_workout_dashboard() {
+	int top, left, w, h;
+	float percent_complete;
+
+	/* progress bar */
+	top = WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_TOP;
+	left = WORKOUT_DASHBOARD_PROG_LEFT;
+	w = LCD_WIDTH - WORKOUT_DASHBOARD_PROG_LEFT * 2;
+	h = WORKOUT_DASHBOARD_PROG_HEIGHT;
+	rb->lcd_set_foreground(WORKOUT_COLOR);
+	rb->lcd_drawrect(left, top, w, h);
+
+	/* calculate percent */
+	percent_complete = MIN(((float)time_since_last_tick / (float)DEFAULT_SECONDS_ON_STATE[playback_state]) * 100.0, 100.0);
+
+	/* fill in inside based on percent */
+	top++;
+	left++;
+	w -= 2;
+	h -= 2;
+	// start with all back
+	rb->lcd_set_foreground(LCD_BLACK);
+	rb->lcd_fillrect(left, top, w, h);
+	// draw percent complete
+	rb->lcd_set_foreground(WORKOUT_COLOR);
+	w = (percent_complete / 100.0) * w;
+	rb->lcd_fillrect(left, top, w, h);
+
+	// print the state
+	rb->lcd_set_foreground(LCD_BLACK);
+	rb->lcd_fillrect(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, LCD_WIDTH * 0.333, 20);
+	rb->lcd_set_foreground(WORKOUT_COLOR);
+	rb->lcd_putsxy(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, STATE_STR[playback_state]);
 }
 
 void copy_screen_to_buffer() {

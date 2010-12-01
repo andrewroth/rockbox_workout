@@ -76,7 +76,7 @@ PLUGIN_HEADER
 #define	WORKOUT_MARGIN			5
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
-#define	WORKOUT_ROWS			5
+#define	WORKOUT_ROWS			2
 #define	WORKOUT_SET_WIDTH		80
 #define	WORKOUT_SET_MARGIN		5
 #define	WORKOUT_SETS_PER_ROW		2
@@ -103,6 +103,7 @@ typedef struct {
 	char name[STR_LEN];
 	long position;
 	long exercise_id;
+	int row;
 } exercise_set;
 
 typedef struct {
@@ -115,6 +116,7 @@ typedef struct {
 	time_t updated_at;
 	exercise_set *sets[MAX_SETS_PER_EXERCISE];
 	int num_sets;
+	long row;
 } exercise;
 
 typedef struct {
@@ -280,6 +282,8 @@ exercise *workout_selected_exercise = NULL;
 int workout_selected_exercise_index;
 exercise_set *workout_selected_set = NULL;
 int workout_selected_set_index;
+bool workout_reset_rows = true;
+int workout_top_row = 0;
 
 enum plugin_status plugin_start(const void* parameter) {
 	(void)parameter;
@@ -515,6 +519,8 @@ void set_screen_to_workout() {
 	}
 	app_current_screen = WORKOUT;
 	playback_last_state_change = now();
+	workout_reset_rows = true;
+	workout_top_row = 0;
 	clear_screen();
 }
 
@@ -589,6 +595,7 @@ bool workout_fwd_set(void) {
 	if (workout_selected_set_index < workout_selected_exercise->num_sets - 1) {
 		workout_selected_set++;
 		workout_selected_set_index++;
+		workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
 		return true;
 	} else {
 		return false;
@@ -600,17 +607,19 @@ bool workout_fwd_exercise(void) {
 	if (workout_selected_exercise_index < curr_workout->num_exercises - 1) {
 		workout_selected_exercise_index++;
 		workout_selected_exercise++;
+		workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
 		return true;
 	} else {
 		return false;
 	}
 }
 
-/* tries to move backward one set.  return true if successful, false if at the last set of the current set */
+/* tries to move backward one set.  return true if successful, false if at the first set of the current exercise */
 bool workout_back_set(void) {
 	if (workout_selected_set_index > 0) {
 		workout_selected_set--;
 		workout_selected_set_index--;
+		workout_top_row = MIN(workout_top_row, workout_selected_set->row);
 		return true;
 	} else {
 		return false;
@@ -622,6 +631,7 @@ bool workout_back_exercise(void) {
 	if (workout_selected_exercise_index > 0) {
 		workout_selected_exercise_index--;
 		workout_selected_exercise--;
+		workout_top_row = MIN(workout_top_row, workout_selected_exercise->row);
 		return true;
 	} else {
 		return false;
@@ -639,6 +649,7 @@ void workout_fwd() {
 		if (workout_selected_exercise->num_sets > 0) {
 			workout_selected_set = workout_selected_exercise->sets[0];
 			workout_selected_set_index = 0;
+			workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
 		} else if (workout_fwd_exercise()) {
 			workout_fwd();
 		}
@@ -659,12 +670,13 @@ void workout_back() {
 		return;
 	}
 
-	/* if no set is chosen but there is an exercise chosen, go backwards to the last set of the next exercise */
+	/* if no set is chosen but there is an exercise chosen, go backwards to the last set of the previous exercise */
 	if (workout_selected_exercise != NULL && workout_selected_set == NULL) {
 		if (workout_back_exercise()) {
 			ns = workout_selected_exercise->num_sets;
 			workout_selected_set = workout_selected_exercise->sets[ns-1];
 			workout_selected_set_index = ns-1;
+			workout_top_row = MIN(workout_top_row, workout_selected_set->row);
 		}
 		return;
 	}
@@ -672,6 +684,7 @@ void workout_back() {
 	/* otherwise move the set backward one, or jump to the exercise only */
 	if (!workout_back_set()) {
 		workout_selected_set = NULL;
+		workout_top_row = MIN(workout_top_row, workout_selected_exercise->row);
 	}
 }
 
@@ -730,6 +743,7 @@ void draw_workout_buffer() {
 	exercise_set *curr_set;
 	exercise_log_entry *exercise_log_entry;
 	set_log_entry *set_log_entry;
+	bool draw;
 	
 	/* reset buffers, they will be rendered again from here */
 	next_free_buffer = 0;
@@ -758,16 +772,19 @@ void draw_workout_buffer() {
 	rb->snprintf(debug_line_ptr, STR_LEN, "In workout view render.  Current workout: %s; num exc: %ld", curr_workout->name, curr_workout->num_exercises);
 	debug(debug_line);
 	row = 0;
-	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += WORKOUT_ROW_HEIGHT) {
+	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += (draw ? WORKOUT_ROW_HEIGHT : 0)) {
+		draw = row >= workout_top_row && row < workout_top_row + WORKOUT_ROWS;
 		curr_exercise = curr_workout->exercises[i + workout_top_item_index];
 
 		// find exercise log
 		exercise_log_entry = find_exercise_log_entry(curr_workout_date->workout_log_entry, curr_exercise);
 
-		debug("In workout view render loop.");
+		debug_print("In workout view render loop.  workout_top_row: %d  row: %d  draw: %d", workout_top_row, row, draw);
 		// clear out the row with a solid color first
-		rb->lcd_set_foreground(BACKGROUND_COLOR);
-		rb->lcd_fillrect(0, y, SCREEN_WIDTH, WORKOUT_ROW_HEIGHT);
+		if (draw) {
+			rb->lcd_set_foreground(BACKGROUND_COLOR);
+			rb->lcd_fillrect(0, y, SCREEN_WIDTH, WORKOUT_ROW_HEIGHT);
+		}
 
 		/* exercise text */
 		if (exercise_log_entry && exercise_log_entry->finished_at != 0) {
@@ -784,61 +801,80 @@ void draw_workout_buffer() {
 		rb->lcd_putsxy(WORKOUT_MARGIN + 1, y, curr_exercise->name);
 
 		/* draw box around it if selected */
-		if (workout_selected_set == NULL && workout_selected_exercise == curr_exercise) {
+		if (draw && workout_selected_set == NULL && workout_selected_exercise == curr_exercise) {
 			rb->lcd_drawrect(WORKOUT_MARGIN, y, SCREEN_WIDTH - WORKOUT_MARGIN * 2, WORKOUT_ROW_HEIGHT - 1);
+		}
+
+		if (workout_reset_rows) {
+			curr_exercise->row = row;
 		}
 
 		/* exercise sets */
 		row++;
-		y += WORKOUT_ROW_HEIGHT;
+		if (draw) y += WORKOUT_ROW_HEIGHT;
 		c = 0;
 		for (j = 0; j < curr_workout->exercises[i + workout_top_item_index]->num_sets; j++) {
+			draw = row >= workout_top_row && row < workout_top_row + WORKOUT_ROWS;
 			curr_set = curr_workout->exercises[i + workout_top_item_index]->sets[j];
 			x = c * WORKOUT_SET_WIDTH + WORKOUT_MARGIN + WORKOUT_SET_MARGIN;
 
 			/* clear out space */
-			rb->lcd_set_foreground(BACKGROUND_COLOR);
-			rb->lcd_fillrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT);
+			if (draw) {
+				rb->lcd_set_foreground(BACKGROUND_COLOR);
+				rb->lcd_fillrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT);
+			}
 
 			/* set text */
 			set_log_entry = find_set_log_entry(exercise_log_entry, curr_set);
 
-			if (set_log_entry && set_log_entry->done_rested_at != 0) {
-				rb->lcd_set_foreground(WORKOUT_DONE_COLOR);
-			} else if (set_log_entry && set_log_entry->completed_at != 0) {
-				rb->lcd_set_foreground(WORKOUT_RESTING_COLOR);
-			} else if (set_log_entry && set_log_entry->started_at != 0) {
-				rb->lcd_set_foreground(WORKOUT_INPROGRESS_COLOR);
-			} else if (set_log_entry && set_log_entry->created_at != 0) {
-				rb->lcd_set_foreground(WORKOUT_SETUP_COLOR);
-			} else {
-				rb->lcd_set_foreground(WORKOUT_COLOR);
+			if (draw) {
+				if (set_log_entry && set_log_entry->done_rested_at != 0) {
+					rb->lcd_set_foreground(WORKOUT_DONE_COLOR);
+				} else if (set_log_entry && set_log_entry->completed_at != 0) {
+					rb->lcd_set_foreground(WORKOUT_RESTING_COLOR);
+				} else if (set_log_entry && set_log_entry->started_at != 0) {
+					rb->lcd_set_foreground(WORKOUT_INPROGRESS_COLOR);
+				} else if (set_log_entry && set_log_entry->created_at != 0) {
+					rb->lcd_set_foreground(WORKOUT_SETUP_COLOR);
+				} else {
+					rb->lcd_set_foreground(WORKOUT_COLOR);
+				}
 			}
 			
 			/* draw set */
-			rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, 0, 0);
-			rb->lcd_putsxy(x + 1, y + 1, set_line);
+			if (draw) {
+				rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, 0, 0);
+				rb->lcd_putsxy(x + 1, y + 1, set_line);
+			}
 
 			/* draw box around it if selected */
-			if (workout_selected_set == curr_set) {
+			if (draw && workout_selected_set == curr_set) {
 				debug_print("   select set %s", curr_set->name);
 				rb->lcd_drawrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT - 1);
+			}
+
+			if (workout_reset_rows) {
+				curr_set->row = row;
 			}
 
 			/* increment set column */
 			c++;
 			if (c == WORKOUT_SETS_PER_ROW) {
 				row++;
-				y += WORKOUT_ROW_HEIGHT;
+				if (draw) y += WORKOUT_ROW_HEIGHT;
+				draw = row >= workout_top_row && row < workout_top_row + WORKOUT_ROWS;
 				c = 0;
 			}
 
 		}
 
+
 		if (row == WORKOUT_ROWS) {
+			/*
 			copy_screen_to_buffer();
 			row = 0;
 			y = 0;
+			*/
 		}
 	}
 

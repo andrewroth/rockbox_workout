@@ -59,7 +59,7 @@ class FunctionsController < ApplicationController
     @function = Function.find(params[:id])
 
     respond_to do |format|
-      if @function.update_attributes(params[:function])
+      if @function.update_attributes(params[:linear_function])
         format.html { redirect_to(function_url(@function.id), :notice => 'Function was successfully updated.') }
         format.xml  { head :ok }
       else

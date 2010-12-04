@@ -67,17 +67,8 @@ ActiveRecord::Schema.define(:version => 20101201053320) do
     t.integer  "exercise_set_id"
   end
 
-  create_table "set_functions", :force => true do |t|
-    t.integer  "set_id"
-    t.string   "variable"
-    t.integer  "variable_function_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
   create_table "set_log_entries", :force => true do |t|
     t.integer  "exercise_log_entry_id"
-    t.integer  "workout_set_id"
     t.integer  "position"
     t.decimal  "v1"
     t.decimal  "v2"
@@ -91,6 +82,7 @@ ActiveRecord::Schema.define(:version => 20101201053320) do
     t.datetime "started_at"
     t.datetime "completed_at"
     t.datetime "done_rested_at"
+    t.integer  "workout_set_id"
   end
 
   create_table "workout_dates", :force => true do |t|

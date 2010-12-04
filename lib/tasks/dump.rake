@@ -5,5 +5,6 @@ namespace :csv do
     WorkoutExercise.write_csv
     WorkoutDate.write_csv
     ExerciseSet.write_csv
+    Function.write_csv
   end
 end

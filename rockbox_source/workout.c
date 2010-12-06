@@ -32,21 +32,30 @@ Andrew Roth
 
 PLUGIN_HEADER
 
-#define	debug_print(...)		rb->snprintf(debug_line_ptr, TXT_LEN, __VA_ARGS__); debug(debug_line_ptr); 
+#if defined(SIMULATOR)
+#define	DEBUG_ENABLED			true
+#else
+#define	DEBUG_ENABLED			false
+#endif
+#define	debug_print(...)		if (DEBUG_ENABLED) { rb->snprintf(debug_line_ptr, TXT_LEN, __VA_ARGS__); debug(debug_line_ptr); }
 
 #define	init(var, val)			var = ((var) || (val))
 #define STR_LEN          		48
 #define TXT_LEN          		1024
-#define MAX_WORKOUTS     		10
-#define MAX_WORKOUT_DATES    		50
-#define MAX_EXERCISES_PER_WORKOUT	10
-#define MAX_EXERCISES			50
-#define MAX_SETS_PER_EXERCISE		10
+#define MAX_WORKOUTS     		20
+#define MAX_WORKOUT_DATES    		30
+#define MAX_EXERCISES_PER_WORKOUT	20
+#define MAX_EXERCISES			120
+#define MAX_SETS_PER_EXERCISE		5
 #define	MAX_EXERCISE_SETS		MAX_EXERCISES*MAX_SETS_PER_EXERCISE
+//#define	MAX_EXERCISE_SETS		120*5     // 600
 #define	MAX_EXERCISE_LOGS		MAX_WORKOUT_DATES*MAX_EXERCISES_PER_WORKOUT
-#define	MAX_SET_LOGS			MAX_EXERCISE_LOGS*MAX_SETS_PER_EXERCISE
+//#define	MAX_EXERCISE_LOGS		30*20     // 600
+//#define	MAX_SET_LOGS			MAX_EXERCISE_LOGS*MAX_SETS_PER_EXERCISE
+//#define	MAX_SET_LOGS			30*20*5   // 3000
+#define	MAX_SET_LOGS			14*MAX_EXERCISES_PER_WORKOUT*MAX_SETS_PER_EXERCISE
 #define	MAX_BUFFERS			0
-#define	MAX_FUNCTIONS			MAX_SET_LOGS*10
+#define	MAX_FUNCTIONS			MAX_SET_LOGS*3 // weight, reps, rest
 
 /* colors */
 #define	LCD_RED			LCD_RGBPACK(255, 0, 0)
@@ -76,10 +85,10 @@ PLUGIN_HEADER
 #define	WORKOUT_MARGIN			5
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
-#define	WORKOUT_ROWS			2
+#define	WORKOUT_ROWS			8
 #define	WORKOUT_SET_WIDTH		80
 #define	WORKOUT_SET_MARGIN		5
-#define	WORKOUT_SETS_PER_ROW		2
+#define	WORKOUT_SETS_PER_ROW		1
 #define	WORKOUT_DASHBOARD_PERCENT	30.0
 #define	WORKOUT_DASHBOARD_TOP		((100.0-WORKOUT_DASHBOARD_PERCENT)/100.0)*SCREEN_HEIGHT
 #define	WORKOUT_DASHBOARD_PROG_HEIGHT	10
@@ -104,49 +113,52 @@ typedef struct exercise_s exercise;
 
 /* workout structures */
 typedef struct {
-	long id;
+	int id;
 	char name[STR_LEN];
-	long position;
+	int position;
 	exercise *exercise_ref;
-	int row;
+	unsigned short int row;
+	unsigned short int reps;
+	int weight;
 } exercise_set;
 
 struct workout_s {
+	int id;
 	char name[STR_LEN]; 
-	long id;
-	time_t created_at;
-	time_t updated_at;
-	long num_exercises;
+	//time_t created_at;
+	//time_t updated_at;
+	int num_exercises;
 	exercise *exercises[MAX_EXERCISES_PER_WORKOUT];
 };
 
 struct exercise_s {
-	long id;
+	int id;
 	char name[STR_LEN]; 
 	char description[STR_LEN]; 
-	long n;
-	long exercise_type_id;
-	time_t created_at;
-	time_t updated_at;
+	int n;
+	unsigned short int exercise_type_id;
+	//time_t created_at;
+	//time_t updated_at;
 	exercise_set *sets[MAX_SETS_PER_EXERCISE];
 	int num_sets;
-	long row;
+	unsigned short int row;
 };
 
 typedef struct {
-	long id;
-	long workout_id;
-	long exercise_id;
+	int id;
+	int workout_id;
+	int exercise_id;
 } workout_exercise;
 
 struct workout_date_s {
 	char when[STR_LEN];
 	long when_int;
 	workout *workout;
-	time_t created_at;
+	//time_t created_at;
+	//time_t updated_at;
 	time_t started_at;
 	time_t finished_at;
-	time_t updated_at;
+	int n;
 };
 
 typedef struct {
@@ -165,21 +177,21 @@ typedef struct {
 	time_t done_rested_at;
 	exercise_set *exercise_set;
 	exercise_log_entry *exercise_log_entry;
-	long n;
-	long position;
+	int n;
+	short int position;
 } set_log_entry;
 
 typedef struct {
-	long id;
+	int id;
 	exercise_set *exercise_set;
 	char variable[STR_LEN];
-	long base;
-	long inc;
-	long round_to_nearest;
-	long min_n;
-	long max_n;
-	long min_v;
-	long max_v;
+	int base;
+	int inc;
+	int round_to_nearest;
+	int min_n;
+	int max_n;
+	int min_v;
+	int max_v;
 } function;
 
 /* method stubs */
@@ -204,6 +216,8 @@ void load_workouts(void);
 long now(void);
 void tick(void);
 void draw_workout_dashboard(void);
+void set_playback_state(int state);
+float calculate_function(char variable[STR_LEN], exercise_set *es, long n, float default_val);
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -242,19 +256,46 @@ int app_current_screen = WORKOUT_MENU;
 int playback_state;
 time_t playback_last_state_change;
 bool playback_is_last_set = false;
+float playback_stay_seconds;
 long int time_since_last_tick;
+int state_seconds;
 int DEFAULT_SECONDS_ON_STATE[NUM_EXERCISE_STATES] = {
-	5 /* setup */,
-	5 /* inprogress */,
-	5 /* rest */,
-	0 /* done workout */
+	5.0 /* setup */,
+	5.0 /* inprogress */,
+	5.0 /* rest */,
+	0.0 /* done workout */
 };
 char *STATE_STR[NUM_EXERCISE_STATES] = {
 	"setup weight" /* setup */,
 	"lift!" /* inprogress */,
 	"rest" /* rest */,
-	"done workout." /* done workout */,
+	"done workout." /* done workout */
 };
+char *STATE_WAIT_VAR[NUM_EXERCISE_STATES] = {
+	"setup" /* setup */,
+	"lift" /* inprogress */,
+	"rest" /* rest */,
+	"done" /* done workout */
+};
+int STATE_BEEP_FREQ[NUM_EXERCISE_STATES] = {
+	1000 /* setup */,
+	2000 /* inprogress */,
+	4000 /* rest */,
+	8000 /* done workout */
+};
+int STATE_BEEP_DURATION[NUM_EXERCISE_STATES] = {
+	100 /* setup */,
+	100 /* inprogress */,
+	100 /* rest */,
+	100 /* done workout */
+};
+int STATE_BEEP_AMPLITUDE[NUM_EXERCISE_STATES] = {
+	1500 /* setup */,
+	1500 /* inprogress */,
+	1500 /* rest */,
+	1500 /* done workout */
+};
+
 /* exercise playback */
 exercise *playback_exercise = NULL;
 exercise_log_entry *playback_exercise_log = NULL;
@@ -264,7 +305,9 @@ int playback_set_index;
 set_log_entry *playback_set_log = NULL;
 
 /* globals */
+#if MAX_BUFFERS > 0
 char buffers[MAX_BUFFERS][LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH];
+#endif
 int next_free_buffer = 0;
 int workout_menu_selected_row = 0;
 int workout_menu_top_item_index = 0;
@@ -278,7 +321,7 @@ exercise *workout_selected_exercise = NULL;
 int workout_selected_exercise_index;
 exercise_set *workout_selected_set = NULL;
 int workout_selected_set_index;
-bool workout_reset_rows = true;
+bool workout_reset_cache = true;
 int workout_top_row = 0;
 
 enum plugin_status plugin_start(const void* parameter) {
@@ -361,7 +404,7 @@ void tick() {
 		time_since_last_tick = now() - playback_last_state_change;
 		diff = time_since_last_tick;
 		debug_print("[%s] diff: %ld", STATE_STR[playback_state], diff);
-		if (diff >= (float)DEFAULT_SECONDS_ON_STATE[playback_state] + 0.10) {
+		if (diff >= playback_stay_seconds) {
 			debug_print("MOVE STATE    before = %d [%s]", playback_state, STATE_STR[playback_state]);
 			switch (playback_state) {
 				case EXERCISE_SETTING_UP:
@@ -375,7 +418,7 @@ void tick() {
 						playback_exercise_log->started_at = now();
 					}
 					playback_last_state_change = now();
-					playback_state = EXERCISE_INPROGRESS;
+					set_playback_state(EXERCISE_INPROGRESS);
 					break;
 				case EXERCISE_INPROGRESS:
 					if (playback_set_log) {
@@ -385,7 +428,7 @@ void tick() {
 						playback_exercise_log->last_completed_at = now();
 					}
 					playback_last_state_change = now();
-					playback_state = EXERCISE_RESTING;
+					set_playback_state(EXERCISE_RESTING);
 					break;
 				case EXERCISE_RESTING:
 					/* fun part - move to the next set or exercise */
@@ -397,7 +440,7 @@ void tick() {
 						if (playback_exercise_index >= curr_workout->num_exercises - 1) {
 							/* done workout! */
 							curr_workout_date->finished_at = now();
-							playback_state = DONE_WORKOUT;
+							set_playback_state(DONE_WORKOUT);
 						} else {
 							/* still have more exercises in the workout */
 							playback_exercise_index++;
@@ -406,7 +449,7 @@ void tick() {
 							playback_set_index = 0;
 							playback_set = playback_exercise->sets[0]; /* TODO: what if there are no sets? */
 							playback_set_log = find_or_create_set_log_entry(playback_exercise_log, playback_set);
-							playback_state = EXERCISE_SETTING_UP;
+							set_playback_state(EXERCISE_SETTING_UP);
 						}
 					} else {
 						/* still have more sets in exercise */
@@ -414,7 +457,7 @@ void tick() {
 						playback_set++;
 						playback_set_log = find_or_create_set_log_entry(playback_exercise_log, playback_set);
 						playback_is_last_set = playback_set_index + 1 == playback_exercise->num_sets;
-						playback_state = EXERCISE_SETTING_UP;
+						set_playback_state(EXERCISE_SETTING_UP);
 					}
 					playback_last_state_change = now();
 					break;
@@ -445,14 +488,18 @@ exercise *find_exercise(long id) {
 }
 
 void init_debug() {
-	debug_fd = rb->open("/workout.txt", O_RDWR | O_CREAT | O_APPEND, 0666);
+	if (DEBUG_ENABLED) {
+		debug_fd = rb->open("/workout.txt", O_RDWR | O_CREAT | O_APPEND, 0666);
+	}
 }
 
 void debug(char *s) {
-	if (s[rb->strlen(s)-1] != '\n') {
-		rb->fdprintf(debug_fd, "%s\n", s);
-	} else {
-		rb->fdprintf(debug_fd, "%s", s);
+	if (DEBUG_ENABLED) {
+		if (s[rb->strlen(s)-1] != '\n') {
+			rb->fdprintf(debug_fd, "%s\n", s);
+		} else {
+			rb->fdprintf(debug_fd, "%s", s);
+		}
 	}
 }
 
@@ -480,7 +527,7 @@ void set_screen_to_workout() {
 		curr_workout_date = workout_dates + workout_menu_selected_row;
 		curr_workout = curr_workout_date->workout;
 		curr_workout_date->workout = curr_workout;
-		debug_print("Number of exercise in workout: %ld\n", curr_workout->num_exercises);
+		debug_print("Number of exercise in workout: %d\n", curr_workout->num_exercises);
 		if (curr_workout->num_exercises > 0) {
 			workout_selected_exercise = curr_workout->exercises[0];
 			workout_selected_exercise_index = 0;
@@ -491,7 +538,6 @@ void set_screen_to_workout() {
 			playback_exercise = e;
 			playback_exercise_index = 0;
 			playback_exercise_log = ele;
-			playback_state = EXERCISE_SETTING_UP;
 			
 			/* set the first set created */
 			debug_print("Checking for first set entry.  Num sets: %d", e->num_sets);
@@ -502,11 +548,12 @@ void set_screen_to_workout() {
 				playback_set_index = 0;
 				playback_set_log = sle;
 			}
+			set_playback_state(EXERCISE_SETTING_UP);
 		}
 	}
 	app_current_screen = WORKOUT;
 	playback_last_state_change = now();
-	workout_reset_rows = true;
+	workout_reset_cache = true;
 	workout_top_row = 0;
 	clear_screen();
 }
@@ -724,6 +771,7 @@ void draw_workout() {
 
 void draw_workout_buffer() {
 	int row, i, j, x, y, c, half_row, title_width;
+	float reps, weight;
 	//bool at_top, at_bottom;
 	char set_line[STR_LEN];
 	exercise* curr_exercise;
@@ -756,7 +804,7 @@ void draw_workout_buffer() {
 
 	/* menu */
 	y += WORKOUT_ROW_HEIGHT + half_row;
-	rb->snprintf(debug_line_ptr, STR_LEN, "In workout view render.  Current workout: %s; num exc: %ld", curr_workout->name, curr_workout->num_exercises);
+	rb->snprintf(debug_line_ptr, STR_LEN, "In workout view render.  Current workout: %s; num exc: %d", curr_workout->name, curr_workout->num_exercises);
 	debug(debug_line);
 	row = 0;
 	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += (draw ? WORKOUT_ROW_HEIGHT : 0)) {
@@ -792,7 +840,7 @@ void draw_workout_buffer() {
 			rb->lcd_drawrect(WORKOUT_MARGIN, y, SCREEN_WIDTH - WORKOUT_MARGIN * 2, WORKOUT_ROW_HEIGHT - 1);
 		}
 
-		if (workout_reset_rows) {
+		if (workout_reset_cache) {
 			curr_exercise->row = row;
 		}
 
@@ -828,9 +876,17 @@ void draw_workout_buffer() {
 				}
 			}
 			
+			if (workout_reset_cache) {
+				reps = calculate_function("reps", curr_set, curr_workout_date->n, 0);
+				weight = calculate_function("weight", curr_set, curr_workout_date->n, 0);
+				curr_set->row = row;
+				curr_set->reps = reps;
+				curr_set->weight = weight;
+			}
+
 			/* draw set */
 			if (draw) {
-				rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, 0, 0);
+				rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, (int)curr_set->reps, (int)curr_set->weight);
 				rb->lcd_putsxy(x + 1, y + 1, set_line);
 			}
 
@@ -838,10 +894,6 @@ void draw_workout_buffer() {
 			if (draw && workout_selected_set == curr_set) {
 				debug_print("   select set %s", curr_set->name);
 				rb->lcd_drawrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT - 1);
-			}
-
-			if (workout_reset_rows) {
-				curr_set->row = row;
 			}
 
 			/* increment set column */
@@ -865,6 +917,7 @@ void draw_workout_buffer() {
 		}
 	}
 
+	workout_reset_cache = false;
 	draw_workout_dashboard();
 	copy_screen_to_buffer();
 }
@@ -872,6 +925,11 @@ void draw_workout_buffer() {
 void draw_workout_dashboard() {
 	int top, left, w, h;
 	float percent_complete;
+	char line[STR_LEN];
+
+	/* start with all back */
+	rb->lcd_set_foreground(LCD_BLACK);
+	rb->lcd_fillrect(0, WORKOUT_DASHBOARD_TOP, LCD_WIDTH, LCD_HEIGHT - WORKOUT_DASHBOARD_TOP);
 
 	/* progress bar */
 	top = WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_TOP;
@@ -882,16 +940,13 @@ void draw_workout_dashboard() {
 	rb->lcd_drawrect(left, top, w, h);
 
 	/* calculate percent */
-	percent_complete = MIN(((float)time_since_last_tick / (float)DEFAULT_SECONDS_ON_STATE[playback_state]) * 100.0, 100.0);
+	percent_complete = MIN(((float)time_since_last_tick / playback_stay_seconds) * 100.0, 100.0);
 
 	/* fill in inside based on percent */
 	top++;
 	left++;
 	w -= 2;
 	h -= 2;
-	// start with all back
-	rb->lcd_set_foreground(LCD_BLACK);
-	rb->lcd_fillrect(left, top, w, h);
 	// draw percent complete
 	rb->lcd_set_foreground(WORKOUT_COLOR);
 	w = (percent_complete / 100.0) * w;
@@ -901,10 +956,12 @@ void draw_workout_dashboard() {
 	rb->lcd_set_foreground(LCD_BLACK);
 	rb->lcd_fillrect(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, LCD_WIDTH * 0.333, 20);
 	rb->lcd_set_foreground(WORKOUT_COLOR);
-	rb->lcd_putsxy(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, STATE_STR[playback_state]);
+	rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR[playback_state], (int)playback_stay_seconds);
+	rb->lcd_putsxy(LCD_WIDTH * 0.15, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, line);
 }
 
 void copy_screen_to_buffer() {
+/*
 	if (next_free_buffer == MAX_BUFFERS) {
 		//debug("ERROR: out of buffers!");
 	} else {
@@ -912,6 +969,7 @@ void copy_screen_to_buffer() {
 				rb->lcd_framebuffer, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
 		next_free_buffer++;
 	}
+*/
 }
 
 void draw_menu_more(int mid_x, int mid_y, bool more, bool down) {
@@ -1008,7 +1066,7 @@ void exercise_set_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 		debug("COPY NAME");
 		rb->strcpy(exercise_sets[num_exercise_sets-1].name, value);
 	} else if (rb->strcmp(cname, "exercise_id") == 0) {
-		e = find_exercise(atoi(value));
+		e = find_exercise(rb->atoi(value));
 		exercise_sets[num_exercise_sets-1].exercise_ref = e;
 		e->num_sets++;
 		e->sets[e->num_sets-1] = exercise_sets + num_exercise_sets - 1;
@@ -1027,6 +1085,9 @@ void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 		debug("COPY workout_id");
 		//workout_dates[num_workout_dates-1].workout_id = rb->atoi(value);
 		workout_dates[num_workout_dates-1].workout = find_workout(rb->atoi(value));
+	} else if (rb->strcmp(cname, "n") == 0) {
+		debug("COPY n");
+		workout_dates[num_workout_dates-1].n = rb->atoi(value);
 	} else if (rb->strcmp(cname, "when") == 0) {
 		debug("COPY when");
 		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 10);
@@ -1077,6 +1138,8 @@ void exercise_set_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value
 }
 
 void function_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
+	int value_i;
+
 	debug_print("function loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	/* TODO */
 	if (rb->strcmp(cname, "id") == 0) {
@@ -1100,11 +1163,17 @@ void function_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN
 	} else if (rb->strcmp(cname, "min_n") == 0) {
 		functions[num_functions-1].min_n = rb->atoi(value);
 	} else if (rb->strcmp(cname, "max_n") == 0) {
-		functions[num_functions-1].max_n = rb->atoi(value);
+		value_i = rb->atoi(value);
+		if (value_i != 0) {
+			functions[num_functions-1].max_n = rb->atoi(value);
+		}
 	} else if (rb->strcmp(cname, "min_v") == 0) {
 		functions[num_functions-1].min_v = rb->atoi(value);
 	} else if (rb->strcmp(cname, "max_v") == 0) {
-		functions[num_functions-1].max_v = rb->atoi(value);
+		value_i = rb->atoi(value);
+		if (value_i != 0) {
+			functions[num_functions-1].max_v = rb->atoi(value);
+		}
 	} else if (rb->strcmp(cname, "variable") == 0) {
 		rb->strcpy(functions[num_functions-1].variable, value);
 	} else if (rb->strcmp(cname, "exercise_set_id") == 0) {
@@ -1265,18 +1334,31 @@ time_t now(void) {
 	return rb->mktime(rb->get_time());
 }
 
-long calculate_function(char variable[STR_LEN], exercise_set *es, long n, long default_val) {
+float calculate_function(char variable[STR_LEN], exercise_set *es, long n, float default_val) {
 	long i;
 
+	debug_print("calculate_function.  PARAMS: exercise_set=%p variable=%s n=%ld default_val=%f", es, variable, n, default_val);
 	/* loop through all functions and try to find one that matches */
 	for (i = 0; i < num_functions; i++) {
+		debug_print("calculate_function.  FUNCTION: exercise_set=%p variable=%s min_n=%d max_n=%d", functions[i].exercise_set, functions[i].variable, functions[i].min_n, functions[i].max_n);
 		if (functions[i].exercise_set == es &&
 				rb->strcmp(variable, functions[i].variable) == 0 &&
 				n >= functions[i].min_n &&
 				n <= functions[i].max_n) {
-			return MIN(MAX(functions[i].base + functions[i].inc * n, functions[i].min_n), functions[i].max_n);
+			debug_print("calculate function.   MATCH");
+			return MIN(MAX(functions[i].base + functions[i].inc * n, functions[i].min_n), functions[i].max_n) + 0.10;
 		}
 	}
 
-	return default_val;
+	return default_val + 0.10;
+}
+
+void set_playback_state(int state) {
+	float default_value;
+	playback_state = state;
+	default_value = (float)DEFAULT_SECONDS_ON_STATE[playback_state];
+	playback_stay_seconds = calculate_function(STATE_WAIT_VAR[playback_state], playback_set, curr_workout_date->n, default_value);
+
+	// beep to notify of the new state
+	rb->pcmbuf_beep(STATE_BEEP_FREQ[playback_state], STATE_BEEP_DURATION[playback_state], STATE_BEEP_AMPLITUDE[playback_state]);
 }

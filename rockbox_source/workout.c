@@ -42,7 +42,7 @@ PLUGIN_HEADER
 #define	init(var, val)			var = ((var) || (val))
 #define STR_LEN          		48
 #define TXT_LEN          		1024
-#define MAX_WORKOUTS     		20
+#define MAX_WORKOUTS     		10
 #define MAX_WORKOUT_DATES    		30
 #define MAX_EXERCISES_PER_WORKOUT	20
 #define MAX_EXERCISES			120
@@ -67,14 +67,17 @@ PLUGIN_HEADER
 #define	BACKGROUND_COLOR	LCD_BLACK
 
 /* choose a workout menu defines */
-#define	SCREEN_WIDTH		176
-#define	SCREEN_HEIGHT		220
-#define	WORKOUT_MENU_WIDTH	152
-#define	WORKOUT_MENU_ROW_HEIGHT	16
-#define	WORKOUT_MENU_ROWS	8
-#define	WORKOUT_MENU_HEIGHT	(WORKOUT_MENU_ROW_HEIGHT * (WORKOUT_MENU_ROWS + 3))
-#define	WORKOUT_MENU_COLOR	LCD_RED
-#define	WORKOUT_MENU_SEL_COLOR	LCD_BLUE
+#define	SCREEN_WIDTH			LCD_WIDTH
+#define	SCREEN_HEIGHT			LCD_HEIGHT
+#define	WORKOUT_MENU_WIDTH		(LCD_WIDTH - WORKOUT_MENU_MARGIN*2)
+//#define	WORKOUT_MENU_HEIGHT		(WORKOUT_MENU_ROW_HEIGHT * WORKOUT_MENU_ROWS) + WORKOUT_MENU_HEADER_HEIGHT*2
+#define	WORKOUT_MENU_HEIGHT		(LCD_HEIGHT - WORKOUT_MENU_MARGIN*2)
+#define	WORKOUT_MENU_ROW_HEIGHT		32
+#define	WORKOUT_MENU_ROWS		4
+#define	WORKOUT_MENU_HEADER_HEIGHT	16
+#define	WORKOUT_MENU_MARGIN		5
+#define	WORKOUT_MENU_COLOR		LCD_RED
+#define	WORKOUT_MENU_SEL_COLOR		LCD_BLUE
 
 /* workout menu itself */
 #define WORKOUT_COLOR			LCD_RED
@@ -86,7 +89,7 @@ PLUGIN_HEADER
 #define	WORKOUT_ROW_HEIGHT		16
 #define	WORKOUT_TITLE_CHAR_WIDTH	8
 #define	WORKOUT_ROWS			8
-#define	WORKOUT_SET_WIDTH		80
+#define	WORKOUT_SET_WIDTH		160
 #define	WORKOUT_SET_MARGIN		5
 #define	WORKOUT_SETS_PER_ROW		1
 #define	WORKOUT_DASHBOARD_PERCENT	30.0
@@ -94,6 +97,11 @@ PLUGIN_HEADER
 #define	WORKOUT_DASHBOARD_PROG_HEIGHT	10
 #define	WORKOUT_DASHBOARD_PROG_LEFT	30
 #define	WORKOUT_DASHBOARD_PROG_TOP	10
+
+/* exercise types */
+#define	EXERCISE_TYPE_WEIGHTS		1
+#define	EXERCISE_TYPE_CARDIO		2
+#define	EXERCISE_TYPE_STRETCH		3
 
 /* exercise states */
 #define	NUM_EXERCISE_STATES		4
@@ -119,6 +127,7 @@ typedef struct {
 	exercise *exercise_ref;
 	unsigned short int row;
 	unsigned short int reps;
+	int hold_for;
 	int weight;
 } exercise_set;
 
@@ -260,8 +269,14 @@ float playback_stay_seconds;
 long int time_since_last_tick;
 int state_seconds;
 int DEFAULT_SECONDS_ON_STATE[NUM_EXERCISE_STATES] = {
+	30.0 /* setup */,
+	30.0 /* inprogress */,
+	30.0 /* rest */,
+	0.0 /* done workout */
+};
+int DEFAULT_SECONDS_ON_STATE_FOR_STRETCH[NUM_EXERCISE_STATES] = {
 	5.0 /* setup */,
-	5.0 /* inprogress */,
+	30.0 /* inprogress */,
 	5.0 /* rest */,
 	0.0 /* done workout */
 };
@@ -271,9 +286,21 @@ char *STATE_STR[NUM_EXERCISE_STATES] = {
 	"rest" /* rest */,
 	"done workout." /* done workout */
 };
+char *STATE_STR_FOR_STRETCH[NUM_EXERCISE_STATES] = {
+	"setup" /* setup */,
+	"hold" /* inprogress */,
+	"rest" /* rest */,
+	"done stretching." /* done workout */
+};
 char *STATE_WAIT_VAR[NUM_EXERCISE_STATES] = {
 	"setup" /* setup */,
 	"lift" /* inprogress */,
+	"rest" /* rest */,
+	"done" /* done workout */
+};
+char *STATE_WAIT_VAR_FOR_STRETCH[NUM_EXERCISE_STATES] = {
+	"setup" /* setup */,
+	"hold_for" /* inprogress */,
 	"rest" /* rest */,
 	"done" /* done workout */
 };
@@ -729,31 +756,32 @@ void draw_workout_menu() {
 	rb->lcd_set_foreground(WORKOUT_MENU_COLOR);
 	x = (SCREEN_WIDTH - WORKOUT_MENU_WIDTH) / 2;
 	y = (SCREEN_HEIGHT - WORKOUT_MENU_HEIGHT) / 2;
+	
+	debug_print("x=%d y=%d", x, y);
 	half_row = WORKOUT_MENU_ROW_HEIGHT / 2;
 
 	/* border */
+	rb->lcd_drawrect(x, y, WORKOUT_MENU_WIDTH, WORKOUT_MENU_HEADER_HEIGHT); 
 	rb->lcd_drawrect(x, y, WORKOUT_MENU_WIDTH, WORKOUT_MENU_HEIGHT); 
-	rb->lcd_drawrect(x, y, WORKOUT_MENU_WIDTH, WORKOUT_MENU_ROW_HEIGHT); 
-	rb->lcd_drawrect(x, y + WORKOUT_MENU_HEIGHT - WORKOUT_MENU_ROW_HEIGHT, 
-			WORKOUT_MENU_WIDTH, WORKOUT_MENU_ROW_HEIGHT); 
+	rb->lcd_drawrect(x, y + WORKOUT_MENU_HEIGHT - WORKOUT_MENU_HEADER_HEIGHT, 
+			WORKOUT_MENU_WIDTH, WORKOUT_MENU_HEADER_HEIGHT); 
 
 	/* more scroll up/down triangle indicators */
 	if (num_workouts > WORKOUT_MENU_ROWS) {
 		at_top = workout_menu_top_item_index == 0;
+		at_top = false;
 		at_bottom = workout_menu_top_item_index == num_workouts - WORKOUT_MENU_ROWS;
-		draw_menu_more(SCREEN_WIDTH / 2, y + WORKOUT_MENU_ROW_HEIGHT / 2, !at_top, false); 
-		draw_menu_more(SCREEN_WIDTH / 2, y + WORKOUT_MENU_HEIGHT - WORKOUT_MENU_ROW_HEIGHT / 2, !at_bottom, true); 
+		draw_menu_more(SCREEN_WIDTH / 2, y + WORKOUT_MENU_HEADER_HEIGHT / 2, !at_top, false); 
+		draw_menu_more(SCREEN_WIDTH / 2, y + WORKOUT_MENU_HEIGHT - WORKOUT_MENU_HEADER_HEIGHT / 2, !at_bottom, true); 
 	}
 
 	/* menu */
-	y += WORKOUT_MENU_ROW_HEIGHT + half_row;
+	y += WORKOUT_MENU_HEADER_HEIGHT + WORKOUT_MENU_MARGIN;
 	for (i = 0; 
-	     i < WORKOUT_MENU_ROWS && i + workout_menu_top_item_index < num_workout_dates;
-	     i++, y += WORKOUT_MENU_ROW_HEIGHT) {
-
+	     i < WORKOUT_MENU_ROWS && i + workout_menu_top_item_index < num_workout_dates; i++) {
 		// clear out the row with a solid color first
 		rb->lcd_set_foreground(BACKGROUND_COLOR);
-		rb->lcd_fillrect(x + half_row, y, WORKOUT_MENU_WIDTH - half_row*2, WORKOUT_MENU_ROW_HEIGHT);
+		rb->lcd_fillrect(x + WORKOUT_MENU_MARGIN, y, WORKOUT_MENU_WIDTH - WORKOUT_MENU_MARGIN*2, WORKOUT_MENU_ROW_HEIGHT);
 		// set different color if selected
 		if (i + workout_menu_top_item_index == workout_menu_selected_row) {
 			rb->lcd_set_foreground(WORKOUT_MENU_SEL_COLOR);
@@ -761,7 +789,14 @@ void draw_workout_menu() {
 			rb->lcd_set_foreground(WORKOUT_MENU_COLOR);
 		}
 		// row text
-		rb->lcd_putsxy(x + half_row, y, workout_dates[workout_menu_top_item_index].workout->name);
+		rb->lcd_putsxy(x + WORKOUT_MENU_MARGIN, y, workout_dates[i].workout->name);
+
+		// workout date
+		y += half_row;
+		rb->lcd_putsxy(LCD_WIDTH * 0.3, y, workout_dates[i].when);
+		y += half_row;
+		y += 2;
+		//y += WORKOUT_MENU_ROW_HEIGHT;
 	}
 }
 
@@ -771,7 +806,6 @@ void draw_workout() {
 
 void draw_workout_buffer() {
 	int row, i, j, x, y, c, half_row, title_width;
-	float reps, weight;
 	//bool at_top, at_bottom;
 	char set_line[STR_LEN];
 	exercise* curr_exercise;
@@ -782,6 +816,10 @@ void draw_workout_buffer() {
 	
 	/* reset buffers, they will be rendered again from here */
 	next_free_buffer = 0;
+
+	/* start with a blank screen */
+	rb->lcd_set_foreground(LCD_BLACK);
+	rb->lcd_fillrect(0, 0, LCD_WIDTH, LCD_HEIGHT);
 
 	rb->lcd_set_foreground(WORKOUT_COLOR);
 	x = WORKOUT_MARGIN;
@@ -877,16 +915,23 @@ void draw_workout_buffer() {
 			}
 			
 			if (workout_reset_cache) {
-				reps = calculate_function("reps", curr_set, curr_workout_date->n, 0);
-				weight = calculate_function("weight", curr_set, curr_workout_date->n, 0);
+				if (curr_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
+					curr_set->reps = calculate_function("reps", curr_set, curr_workout_date->n, 0);
+					curr_set->weight = calculate_function("weight", curr_set, curr_workout_date->n, 0);
+				} else if (curr_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
+					curr_set->hold_for = calculate_function("hold_for", curr_set, curr_workout_date->n, 30);
+				}
 				curr_set->row = row;
-				curr_set->reps = reps;
-				curr_set->weight = weight;
 			}
 
 			/* draw set */
 			if (draw) {
-				rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, (int)curr_set->reps, (int)curr_set->weight);
+				debug_print("    exercise_type_id=%d", curr_exercise->exercise_type_id);
+				if (curr_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
+					rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, (int)curr_set->reps, (int)curr_set->weight);
+				} else if (curr_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
+					rb->snprintf(set_line, STR_LEN, "%s %ds", curr_set->name, (int)curr_set->hold_for);
+				}
 				rb->lcd_putsxy(x + 1, y + 1, set_line);
 			}
 
@@ -956,7 +1001,11 @@ void draw_workout_dashboard() {
 	rb->lcd_set_foreground(LCD_BLACK);
 	rb->lcd_fillrect(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, LCD_WIDTH * 0.333, 20);
 	rb->lcd_set_foreground(WORKOUT_COLOR);
-	rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR[playback_state], (int)playback_stay_seconds);
+	if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
+		rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR[playback_state], (int)playback_stay_seconds);
+	} else if (playback_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
+		rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR_FOR_STRETCH[playback_state], (int)playback_stay_seconds);
+	}
 	rb->lcd_putsxy(LCD_WIDTH * 0.15, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, line);
 }
 
@@ -1031,6 +1080,8 @@ void exercise_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN
 		exercises[num_exercises-1].id = rb->atoi(value);
 		// inits
 		exercises[num_exercises-1].num_sets = 0;
+	} else if (rb->strcmp(cname, "exercise_type_id") == 0) {
+		exercises[num_exercises-1].exercise_type_id = rb->atoi(value);
 	} else if (rb->strcmp(cname, "name") == 0) {
 		debug("COPY NAME");
 		rb->strcpy(exercises[num_exercises-1].name, value);
@@ -1085,13 +1136,14 @@ void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 		debug("COPY workout_id");
 		//workout_dates[num_workout_dates-1].workout_id = rb->atoi(value);
 		workout_dates[num_workout_dates-1].workout = find_workout(rb->atoi(value));
+		debug_print("       name of workout: %s", workout_dates[num_workout_dates-1].workout->name);
 	} else if (rb->strcmp(cname, "n") == 0) {
 		debug("COPY n");
 		workout_dates[num_workout_dates-1].n = rb->atoi(value);
 	} else if (rb->strcmp(cname, "when") == 0) {
 		debug("COPY when");
-		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 10);
-		workout_dates[num_workout_dates-1].when[11] = 0;
+		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 11);
+		workout_dates[num_workout_dates-1].when[12] = 0;
 	}
 }
 
@@ -1356,8 +1408,13 @@ float calculate_function(char variable[STR_LEN], exercise_set *es, long n, float
 void set_playback_state(int state) {
 	float default_value;
 	playback_state = state;
-	default_value = (float)DEFAULT_SECONDS_ON_STATE[playback_state];
-	playback_stay_seconds = calculate_function(STATE_WAIT_VAR[playback_state], playback_set, curr_workout_date->n, default_value);
+	if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
+		default_value = (float)DEFAULT_SECONDS_ON_STATE[playback_state];
+		playback_stay_seconds = calculate_function(STATE_WAIT_VAR[playback_state], playback_set, curr_workout_date->n, default_value);
+	} else if (playback_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
+		default_value = (float)DEFAULT_SECONDS_ON_STATE_FOR_STRETCH[playback_state];
+		playback_stay_seconds = calculate_function(STATE_WAIT_VAR_FOR_STRETCH[playback_state], playback_set, curr_workout_date->n, default_value);
+	}
 
 	// beep to notify of the new state
 	rb->pcmbuf_beep(STATE_BEEP_FREQ[playback_state], STATE_BEEP_DURATION[playback_state], STATE_BEEP_AMPLITUDE[playback_state]);

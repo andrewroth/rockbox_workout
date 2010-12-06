@@ -19,6 +19,10 @@
     <%= f.label :workout_id %><br />
     <%= f.collection_select :workout_id, Workout.all, :id, :name %>
   </div>
+  <div class="field">
+    <%= f.label :n %><br />
+    <%= f.text_field :n %>
+  </div>
   <div class="actions">
     <%= f.submit %>
   </div>

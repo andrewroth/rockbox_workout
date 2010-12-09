@@ -160,6 +160,7 @@ typedef struct {
 } workout_exercise;
 
 struct workout_date_s {
+	int id;
 	char when[STR_LEN];
 	long when_int;
 	workout *workout;
@@ -317,10 +318,10 @@ int STATE_BEEP_DURATION[NUM_EXERCISE_STATES] = {
 	100 /* done workout */
 };
 int STATE_BEEP_AMPLITUDE[NUM_EXERCISE_STATES] = {
-	1500 /* setup */,
-	1500 /* inprogress */,
-	1500 /* rest */,
-	1500 /* done workout */
+	3000 /* setup */,
+	3000 /* inprogress */,
+	3000 /* rest */,
+	3000 /* done workout */
 };
 
 /* exercise playback */
@@ -1418,4 +1419,56 @@ void set_playback_state(int state) {
 
 	// beep to notify of the new state
 	rb->pcmbuf_beep(STATE_BEEP_FREQ[playback_state], STATE_BEEP_DURATION[playback_state], STATE_BEEP_AMPLITUDE[playback_state]);
+}
+
+void write_workout_dates() {
+	int i, wd_fd;
+	workout_date *wd;
+
+	wd_fd = rb->open("/workouts/workout_dates.csv", O_RDWR | O_CREAT, 0666);
+	for (i = 0; i <= num_workout_dates; i++) {
+		wd = workout_dates + i;
+		rb->fdprintf(debug_fd, "id,integer,%d\n", wd->id);
+		rb->fdprintf(debug_fd, "when,datetime,%s\n", wd->when);
+		rb->fdprintf(debug_fd, "when_int,datetime,%ld\n", wd->when_int);
+		rb->fdprintf(debug_fd, "workout_id,integer,%d\n", wd->workout->id);
+		rb->fdprintf(debug_fd, "n,integer,%d\n", wd->n);
+	}
+	rb->close(wd_fd);
+}
+
+void write_exercise_logs() {
+	int i, ele_fd;
+	exercise_log_entry *ele;
+
+	ele_fd = rb->open("/workouts/exercise_logs.csv", O_RDWR | O_CREAT, 0666);
+	for (i = 0; i <= num_exercise_log_entries; i++) {
+		ele = exercise_log_entries + i;
+		rb->fdprintf(debug_fd, "created_at_int,datetime,%ld\n", ele->created_at);
+		rb->fdprintf(debug_fd, "started_at_int,datetime,%ld\n", ele->started_at);
+		rb->fdprintf(debug_fd, "last_completed_at_int,datetime,%ld\n", ele->last_completed_at);
+		rb->fdprintf(debug_fd, "finished_at_int,datetime,%ld\n", ele->finished_at);
+		rb->fdprintf(debug_fd, "workout_date_id,integer,%d\n", ele->workout_date->id);
+		rb->fdprintf(debug_fd, "exercise_id,integer,%d\n", ele->exercise->id);
+	}
+	rb->close(ele_fd);
+}
+
+void write_set_log_entries() {
+	int i, ele_fd;
+	set_log_entry *sle;
+
+	ele_fd = rb->open("/workouts/set_logs.csv", O_RDWR | O_CREAT, 0666);
+	for (i = 0; i <= num_set_log_entries; i++) {
+		sle = set_log_entries + i;
+		rb->fdprintf(debug_fd, "created_at_int,datetime,%ld\n", sle->created_at);
+		rb->fdprintf(debug_fd, "started_at_int,datetime,%ld\n", sle->started_at);
+		rb->fdprintf(debug_fd, "completed_at_int,datetime,%ld\n", sle->completed_at);
+		rb->fdprintf(debug_fd, "done_rested_at,datetime,%ld\n", sle->done_rested_at);
+		rb->fdprintf(debug_fd, "exercise_set_id,integer,%d\n", sle->exercise_set->id);
+		rb->fdprintf(debug_fd, "exercise_log_entry_created_at_int,integer,%ld\n", sle->exercise_log_entry->created_at);
+		rb->fdprintf(debug_fd, "n,integer,%d\n", sle->n);
+		rb->fdprintf(debug_fd, "position,integer,%d\n", sle->position);
+	}
+	rb->close(ele_fd);
 }

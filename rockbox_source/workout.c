@@ -414,9 +414,13 @@ enum plugin_status plugin_start(const void* parameter) {
 				if (app_current_screen == WORKOUT_MENU) {
 					set_screen_to_workout();
 				} else if (app_current_screen == WORKOUT) {
-					playback_exercise = workout_selected_exercise;
-					playback_set = workout_selected_set;
-					set_playback_state(EXERCISE_SETTING_UP);
+					if (workout_selected_exercise != NULL && workout_selected_set != NULL) {
+						playback_exercise = workout_selected_exercise;
+						playback_set = workout_selected_set;
+						playback_exercise_log = find_or_create_exercise_log_entry(curr_workout_date, playback_exercise);
+						playback_set_log = find_or_create_set_log_entry(playback_exercise_log, playback_set);
+						set_playback_state(EXERCISE_SETTING_UP);
+					}
 				}
 				break;
 			case BUTTON_SCROLL_FWD:
@@ -443,7 +447,7 @@ void tick() {
 	if (app_current_screen == WORKOUT) {
 		time_since_last_tick = now() - playback_last_state_change;
 		diff = time_since_last_tick;
-		debug_print("[%s] diff: %ld", STATE_STR[playback_state], diff);
+		//debug_print("[%s] diff: %ld", STATE_STR[playback_state], diff);
 		if (diff >= playback_stay_seconds) {
 			debug_print("MOVE STATE    before = %d [%s]", playback_state, STATE_STR[playback_state]);
 			switch (playback_state) {
@@ -790,7 +794,7 @@ void draw_workout_menu() {
 	x = (SCREEN_WIDTH - WORKOUT_MENU_WIDTH) / 2;
 	y = (SCREEN_HEIGHT - WORKOUT_MENU_HEIGHT) / 2;
 	
-	debug_print("x=%d y=%d", x, y);
+	//debug_print("x=%d y=%d", x, y);
 	half_row = WORKOUT_MENU_ROW_HEIGHT / 2;
 
 	/* border */
@@ -875,8 +879,7 @@ void draw_workout_buffer() {
 
 	/* menu */
 	y += WORKOUT_ROW_HEIGHT + half_row;
-	rb->snprintf(debug_line_ptr, STR_LEN, "In workout view render.  Current workout: %s; num exc: %d", curr_workout->name, curr_workout->num_exercises);
-	debug(debug_line);
+	//debug_print("In workout view render.  Current workout: %s; num exc: %d", curr_workout->name, curr_workout->num_exercises);
 	row = 0;
 	for (i = 0; i < curr_workout->num_exercises; i++, row++, y += (draw ? WORKOUT_ROW_HEIGHT : 0)) {
 		draw = row >= workout_top_row && row < workout_top_row + WORKOUT_ROWS;
@@ -885,7 +888,7 @@ void draw_workout_buffer() {
 		// find exercise log
 		exercise_log_entry = find_exercise_log_entry(curr_workout_date, curr_exercise);
 
-		debug_print("In workout view render loop.  workout_top_row: %d  row: %d  draw: %d", workout_top_row, row, draw);
+		//debug_print("In workout view render loop.  workout_top_row: %d  row: %d  draw: %d", workout_top_row, row, draw);
 		// clear out the row with a solid color first
 		if (draw) {
 			rb->lcd_set_foreground(BACKGROUND_COLOR);
@@ -964,7 +967,7 @@ void draw_workout_buffer() {
 
 			/* draw set */
 			if (draw) {
-				debug_print("    exercise_type_id=%d", curr_exercise->exercise_type_id);
+				//debug_print("    exercise_type_id=%d", curr_exercise->exercise_type_id);
 				if (curr_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
 					if (curr_set == playback_set) {
 						rb->snprintf(set_line, STR_LEN, "*%s %dx%d", curr_set->name, (int)curr_set->reps, (int)curr_set->weight);
@@ -975,7 +978,7 @@ void draw_workout_buffer() {
 					if (curr_set == playback_set) {
 						rb->snprintf(set_line, STR_LEN, "*%s %ds", curr_set->name, (int)curr_set->hold_for);
 					} else {
-						rb->snprintf(set_line, STR_LEN, "%s %dx%d", curr_set->name, (int)curr_set->reps, (int)curr_set->weight);
+						rb->snprintf(set_line, STR_LEN, "%s %ds", curr_set->name, (int)curr_set->hold_for);
 					}
 				}
 				rb->lcd_putsxy(x + 1, y + 1, set_line);
@@ -983,7 +986,7 @@ void draw_workout_buffer() {
 
 			/* draw box around it if selected */
 			if (draw && workout_selected_set == curr_set) {
-				debug_print("   select set %s", curr_set->name);
+				//debug_print("   select set %s", curr_set->name);
 				rb->lcd_drawrect(x, y, WORKOUT_SET_WIDTH, WORKOUT_ROW_HEIGHT - 1);
 			}
 

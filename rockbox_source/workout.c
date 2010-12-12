@@ -7,7 +7,7 @@
  *                     \/            \/     \/    \/            \/
  * $Id: workout.c
  *
- * Copyright (C) 2002 Andrew Roth
+ * Copyright (C) 2010 Andrew Roth
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -326,10 +326,10 @@ int STATE_BEEP_DURATION[NUM_EXERCISE_STATES] = {
 	100 /* done workout */
 };
 int STATE_BEEP_AMPLITUDE[NUM_EXERCISE_STATES] = {
-	3000 /* setup */,
-	3000 /* inprogress */,
-	3000 /* rest */,
-	3000 /* done workout */
+	6000 /* setup */,
+	6000 /* inprogress */,
+	6000 /* rest */,
+	6000 /* done workout */
 };
 
 /* exercise playback */
@@ -1189,6 +1189,9 @@ void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 	} else if (rb->strcmp(cname, "n") == 0) {
 		debug("COPY n");
 		workout_dates[num_workout_dates-1].n = rb->atoi(value);
+	} else if (rb->strcmp(cname, "when_int") == 0) {
+		debug("COPY n");
+		workout_dates[num_workout_dates-1].when_int = rb->atoi(value);
 	} else if (rb->strcmp(cname, "when") == 0) {
 		debug("COPY when");
 		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 11);
@@ -1507,6 +1510,8 @@ void write_workout_dates() {
 		rb->fdprintf(wd_fd, "when_int,datetime,%ld\n", wd->when_int);
 		rb->fdprintf(wd_fd, "workout_id,integer,%d\n", wd->workout->id);
 		rb->fdprintf(wd_fd, "n,integer,%d\n", wd->n);
+		rb->fdprintf(wd_fd, "started_at_int,datetime,%ld\n", wd->started_at);
+		rb->fdprintf(wd_fd, "finished_at_int,datetime,%ld\n", wd->finished_at);
 	}
 	rb->close(wd_fd);
 }

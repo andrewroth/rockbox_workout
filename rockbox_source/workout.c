@@ -693,6 +693,7 @@ bool workout_fwd_set(void) {
 	if (workout_selected_set_index < workout_selected_exercise->num_sets - 1) {
 		workout_selected_set++;
 		workout_selected_set_index++;
+		workout_selected_set = workout_selected_exercise->sets[workout_selected_set_index];
 		workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
 		return true;
 	} else {
@@ -704,7 +705,7 @@ bool workout_fwd_set(void) {
 bool workout_fwd_exercise(void) {
 	if (workout_selected_exercise_index < curr_workout->num_exercises - 1) {
 		workout_selected_exercise_index++;
-		workout_selected_exercise++;
+		workout_selected_exercise = curr_workout->exercises[workout_selected_exercise_index];
 		workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
 		return true;
 	} else {
@@ -715,8 +716,8 @@ bool workout_fwd_exercise(void) {
 /* tries to move backward one set.  return true if successful, false if at the first set of the current exercise */
 bool workout_back_set(void) {
 	if (workout_selected_set_index > 0) {
-		workout_selected_set--;
 		workout_selected_set_index--;
+		workout_selected_set = workout_selected_exercise->sets[workout_selected_set_index];
 		workout_top_row = MIN(workout_top_row, workout_selected_set->row);
 		return true;
 	} else {
@@ -728,7 +729,7 @@ bool workout_back_set(void) {
 bool workout_back_exercise(void) {
 	if (workout_selected_exercise_index > 0) {
 		workout_selected_exercise_index--;
-		workout_selected_exercise--;
+		workout_selected_exercise = curr_workout->exercises[workout_selected_exercise_index];
 		workout_top_row = MIN(workout_top_row, workout_selected_exercise->row);
 		return true;
 	} else {

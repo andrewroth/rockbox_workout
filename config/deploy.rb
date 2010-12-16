@@ -30,6 +30,7 @@ desc "Add linked files after deploy and set permissions"
 task :local_symlinks, :roles => :app do
   run "ln -s #{shared_path}/config/database.yml #{release_path}/config/database.yml"
   run "ln -s #{shared_path}/tmp/sessions #{release_path}/tmp/sessions"
+  run "mkdir #{release_path}/transfer"
   sudo "chgrp -R #{fetch(:group)} #{release_path}"
   sudo "chmod -R g+w #{release_path}"
 end
@@ -79,12 +80,12 @@ namespace :sansa do
   desc "copies transfer/*.csv to sansa"
   task :flash do
     ensure_plugged_in
-    system "#{File.dirname(__FILE__)}/../copy_csvs_to_sansa.sh"
+    system "sh #{File.dirname(__FILE__)}/../copy_csvs_to_sansa.sh"
   end
   desc "pulls the csv from sansa to local transfer dir"
   task :pull do
     ensure_plugged_in
-    system "#{File.dirname(__FILE__)}/../copy_csvs_from_sansa.sh"
+    system "sh #{File.dirname(__FILE__)}/../copy_csvs_from_sansa.sh"
   end
   task :ensure_plugged_in do
     unless File.directory?("/Volumes/Sansa\ e260")

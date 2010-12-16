@@ -17,7 +17,7 @@ RockboxWorkout::Application.routes.draw do
 
   resources :exercise_types
 
-  resources :exercises do |e|
+  resources :exercises do
     member do
       get :make_standard_sets
     end

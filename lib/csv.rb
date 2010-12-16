@@ -13,7 +13,7 @@ module Csv
   def self.included(base)
     base.class_eval do
       def self.write_csv(path = nil)
-        path ||= "tmp/#{self.name.underscore.pluralize}.csv"
+        path ||= "transfer/#{self.name.underscore.pluralize}.csv"
         f = File.open(path, "w")
         if block_given?
           rows = yield

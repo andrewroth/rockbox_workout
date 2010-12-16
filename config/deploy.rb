@@ -22,14 +22,14 @@ set :git_enable_submodules, 1
 
 desc "Restart the web server"
 deploy.task :restart, :roles => :app do
-    run "touch #{deploy_to}/current/tmp/restart.txt"
+    run "touch #{deploy_to}/current/transfer/restart.txt"
 end 
 
 after 'deploy:update_code', 'local_symlinks'
 desc "Add linked files after deploy and set permissions"
 task :local_symlinks, :roles => :app do
   run "ln -s #{shared_path}/config/database.yml #{release_path}/config/database.yml"
-  run "ln -s #{shared_path}/tmp/sessions #{release_path}/tmp/sessions"
+  run "ln -s #{shared_path}/transfer/sessions #{release_path}/transfer/sessions"
   sudo "chgrp -R #{fetch(:group)} #{release_path}"
   sudo "chmod -R g+w #{release_path}"
 end
@@ -52,10 +52,44 @@ end
 
 
 namespace :sync do
+  task :default do
+    up
+    down
+  end
+
   task :down do
-    run("cd #{deploy_to}/current && /usr/bin/env rake `csv:dump` RAILS_ENV=production")
+    run("cd #{deploy_to}/current && /usr/bin/env rake csv:dump RAILS_ENV=production")
     for file_name in %w(workouts workout_dates workout_exercises exercises exercise_sets functions)
-      get("cd #{deploy_to}/current/tmp/#{file}.csv", "tmp/#{file}.csv")
+      get("#{deploy_to}/current/transfer/#{file_name}.csv", "transfer/#{file_name}.csv")
+    end
+    sansa.flash
+  end
+  desc "uploads the local csvs in transfer and loads them into the server db"
+  task :up do
+    sansa.pull
+    run "mkdir -p #{deploy_to}/current/transfer"
+    for file_name in %w(workout_dates exercise_logs set_logs)
+      upload("transfer/#{file_name}.csv", "#{deploy_to}/current/transfer/#{file_name}.csv")
+    end
+    run("cd #{deploy_to}/current && /usr/bin/env rake csv:read RAILS_ENV=production")
+  end
+end
+
+namespace :sansa do
+  desc "copies transfer/*.csv to sansa"
+  task :flash do
+    ensure_plugged_in
+    system "#{File.dirname(__FILE__)}/../copy_csvs_to_sansa.sh"
+  end
+  desc "pulls the csv from sansa to local transfer dir"
+  task :pull do
+    ensure_plugged_in
+    system "#{File.dirname(__FILE__)}/../copy_csvs_from_sansa.sh"
+  end
+  task :ensure_plugged_in do
+    unless File.directory?("/Volumes/Sansa\ e260")
+      puts "Plug in sansa and hit enter."
+      STDIN.gets
     end
   end
 end

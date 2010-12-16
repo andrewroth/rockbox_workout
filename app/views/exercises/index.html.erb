@@ -19,6 +19,7 @@
     <td><%= exercise.description %></td>
     <td><%= link_to 'Show', exercise %></td>
     <td><%= link_to 'Edit', edit_exercise_path(exercise) %></td>
+    <td><%= link_to 'Make Standard Sets', make_standard_sets_exercise_path(exercise) %></td>
     <td><%= link_to 'Destroy', exercise, :confirm => 'Are you sure?', :method => :delete %></td>
   </tr>
 <% end %>

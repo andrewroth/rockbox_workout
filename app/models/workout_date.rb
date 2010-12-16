@@ -2,6 +2,13 @@ class WorkoutDate < ActiveRecord::Base
   include Csv
 
   belongs_to :workout
+  has_many :exercise_log_entries
+
+  def self.write_csv
+    super do
+      WorkoutDate.where("finished_at IS NULL")
+    end
+  end
 
   def self.read_csv
     f = File.read(Rails.root.join("transfer/workout_dates.csv"))

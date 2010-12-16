@@ -1,4 +1,10 @@
 class ExerciseLogEntry < ActiveRecord::Base
+  def self.write_csv
+    write_csv do
+      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries)
+    end
+  end
+
   def self.read_csv
     f = File.read(Rails.root.join("transfer/exercise_logs.csv"))
     ele = nil

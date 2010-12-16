@@ -15,7 +15,12 @@ module Csv
       def self.write_csv(path = nil)
         path ||= "tmp/#{self.name.underscore.pluralize}.csv"
         f = File.open(path, "w")
-        f.write all.collect(&:to_csv).join("\n") + "\n"
+        if block_given?
+          rows = yield
+        else
+          rows = all
+        end
+        f.write rows.collect(&:to_csv).join("\n") + "\n"
         f.close
       end
     end

@@ -1,4 +1,20 @@
 class ExercisesController < ApplicationController
+
+  def make_standard_sets
+    @exercise = Exercise.find(params[:id])
+    es = @exercise.exercise_sets.find_or_create_by_name "1st"
+    es.position = 1
+    es.save!
+    es = @exercise.exercise_sets.find_or_create_by_name "2nd"
+    es.position = 2
+    es.save!
+    es = @exercise.exercise_sets.find_or_create_by_name "3rd"
+    es.position = 3
+    es.save!
+    flash[:notice] = "Standard sets 1st, 2nd, 3rd made for #{@exercise.name}"
+    redirect_to exercises_url
+  end
+
   # GET /exercises
   # GET /exercises.xml
   def index

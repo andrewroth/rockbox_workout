@@ -30,6 +30,7 @@ desc "Add linked files after deploy and set permissions"
 task :local_symlinks, :roles => :app do
   run "ln -s #{shared_path}/config/database.yml #{release_path}/config/database.yml"
   run "ln -s #{shared_path}/tmp/sessions #{release_path}/tmp/sessions"
+  run "mkdir #{release_path}/transfer"
   sudo "chgrp -R #{fetch(:group)} #{release_path}"
   sudo "chmod -R g+w #{release_path}"
 end
@@ -50,3 +51,46 @@ task :long_deploy do
   # deploy.enable_web
 end
 
+
+namespace :sync do
+  task :default do
+    up
+    down
+  end
+
+  task :down do
+    run("cd #{deploy_to}/current && /usr/bin/env rake csv:dump RAILS_ENV=production")
+    for file_name in %w(workouts workout_dates workout_exercises exercises exercise_sets functions)
+      get("#{deploy_to}/current/transfer/#{file_name}.csv", "transfer/#{file_name}.csv")
+    end
+    sansa.flash
+  end
+  desc "uploads the local csvs in transfer and loads them into the server db"
+  task :up do
+    sansa.pull
+    run "mkdir -p #{deploy_to}/current/transfer"
+    for file_name in %w(workout_dates exercise_logs set_logs)
+      upload("transfer/#{file_name}.csv", "#{deploy_to}/current/transfer/#{file_name}.csv")
+    end
+    run("cd #{deploy_to}/current && /usr/bin/env rake csv:read RAILS_ENV=production")
+  end
+end
+
+namespace :sansa do
+  desc "copies transfer/*.csv to sansa"
+  task :flash do
+    ensure_plugged_in
+    system "sh #{File.dirname(__FILE__)}/../copy_csvs_to_sansa.sh"
+  end
+  desc "pulls the csv from sansa to local transfer dir"
+  task :pull do
+    ensure_plugged_in
+    system "sh #{File.dirname(__FILE__)}/../copy_csvs_from_sansa.sh"
+  end
+  task :ensure_plugged_in do
+    unless File.directory?("/Volumes/Sansa\ e260")
+      puts "Plug in sansa and hit enter."
+      STDIN.gets
+    end
+  end
+end

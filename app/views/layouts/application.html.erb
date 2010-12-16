@@ -19,7 +19,14 @@
   - 
   <%= link_to "Functions", functions_url %>
 
-<%= yield %>
+  <div style="color: red">
+    <% if flash[:notice] %>
+      <%= flash[:notice] %>
+    <% end %>
+  </div>
+
+    <%= yield %>
+  </div>
 
 </body>
 </html>

@@ -39,7 +39,8 @@ PLUGIN_HEADER
 #endif
 #define	debug_print(...)		if (DEBUG_ENABLED) { rb->snprintf(debug_line_ptr, TXT_LEN, __VA_ARGS__); debug(debug_line_ptr); }
 
-#define	init(var, val)			var = ((var) || (val))
+#define	init_int(var, val)		var = ((var) != 0 ? (var) : (val))
+#define	init(var, val)			var = ((var) != NULL ? (var) : (val))
 #define STR_LEN          		48
 #define TXT_LEN          		1024
 #define MAX_WORKOUTS     		10
@@ -277,8 +278,9 @@ bool playback_is_last_set = false;
 float playback_stay_seconds;
 long int time_since_last_tick;
 int state_seconds;
+#define	DEFAULT_SECONDS_ON_SETUP_FIRST_EXERCISE		60
 int DEFAULT_SECONDS_ON_STATE[NUM_EXERCISE_STATES] = {
-	30.0 /* setup */,
+	10.0 /* setup */,
 	30.0 /* inprogress */,
 	30.0 /* rest */,
 	0.0 /* done workout */
@@ -416,9 +418,12 @@ enum plugin_status plugin_start(const void* parameter) {
 				} else if (app_current_screen == WORKOUT) {
 					if (workout_selected_exercise != NULL && workout_selected_set != NULL) {
 						playback_exercise = workout_selected_exercise;
+						playback_exercise_index = workout_selected_exercise_index;
 						playback_set = workout_selected_set;
+						playback_set_index = workout_selected_set_index;
 						playback_exercise_log = find_or_create_exercise_log_entry(curr_workout_date, playback_exercise);
 						playback_set_log = find_or_create_set_log_entry(playback_exercise_log, playback_set);
+						init_int(playback_set_log->started_at, now());
 						set_playback_state(EXERCISE_SETTING_UP);
 					}
 				}
@@ -488,7 +493,7 @@ void tick() {
 						} else {
 							/* still have more exercises in the workout */
 							playback_exercise_index++;
-							playback_exercise++;
+							playback_exercise = curr_workout->exercises[playback_exercise_index];
 							playback_exercise_log = find_or_create_exercise_log_entry(curr_workout_date, playback_exercise);
 							playback_set_index = 0;
 							playback_set = playback_exercise->sets[0]; /* TODO: what if there are no sets? */
@@ -1485,7 +1490,11 @@ void set_playback_state(int state) {
 	float default_value;
 	playback_state = state;
 	if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
-		default_value = (float)DEFAULT_SECONDS_ON_STATE[playback_state];
+		if (playback_set_index == 0 && playback_state == EXERCISE_SETTING_UP) {
+			default_value = DEFAULT_SECONDS_ON_SETUP_FIRST_EXERCISE;
+		} else {
+			default_value = (float)DEFAULT_SECONDS_ON_STATE[playback_state];
+		}
 		playback_stay_seconds = calculate_function(STATE_WAIT_VAR[playback_state], playback_set, curr_workout_date->n, default_value);
 	} else if (playback_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
 		default_value = (float)DEFAULT_SECONDS_ON_STATE_FOR_STRETCH[playback_state];

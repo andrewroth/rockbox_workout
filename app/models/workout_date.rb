@@ -28,6 +28,8 @@ class WorkoutDate < ActiveRecord::Base
         wd.started_at = Time.at(value.to_i) if value != '0'
       when 'created_at_int'
         wd.created_at = Time.at(value.to_i) if value != '0'
+      when 'finished_at_int'
+        wd.finished_at = Time.at(value.to_i) if value != '0'
       end
     end
     wd.save! if wd # save the last workout date

@@ -58,13 +58,24 @@ namespace :sync do
     down
   end
 
-  task :down do
+  task :download do
     run("cd #{deploy_to}/current && /usr/bin/env rake csv:dump RAILS_ENV=production")
     for file_name in %w(workouts workout_dates workout_exercises exercises exercise_sets functions)
       get("#{deploy_to}/current/transfer/#{file_name}.csv", "transfer/#{file_name}.csv")
     end
+  end
+
+  task :vmware do
+    download
+    vm.flash
+  end
+
+  desc "downloads al the csvs from the server and loads them to the sansa"
+  task :down do
+    download
     sansa.flash
   end
+
   desc "uploads the local csvs in transfer and loads them into the server db"
   task :up do
     sansa.pull
@@ -92,5 +103,15 @@ namespace :sansa do
       puts "Plug in sansa and hit enter."
       STDIN.gets
     end
+  end
+end
+
+namespace :vm do
+  task :default do
+    flash
+  end
+
+  task :flash do
+    system "sh #{File.dirname(__FILE__)}/../copy_csvs_to_vmware.sh"
   end
 end

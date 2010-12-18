@@ -1,6 +1,10 @@
 class ExerciseLogEntry < ActiveRecord::Base
+  include Csv
+
+  has_many :set_log_entries
+
   def self.write_csv
-    write_csv do
+    super do
       WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries)
     end
   end

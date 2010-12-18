@@ -6,6 +6,8 @@ namespace :csv do
     WorkoutDate.write_csv
     ExerciseSet.write_csv
     Function.write_csv
+    ExerciseLogEntry.write_csv
+    SetLogEntry.write_csv
   end
 
   task :read => :environment do

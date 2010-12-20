@@ -60,7 +60,7 @@ namespace :sync do
 
   task :download do
     run("cd #{deploy_to}/current && /usr/bin/env rake csv:dump RAILS_ENV=production")
-    for file_name in %w(workouts workout_dates workout_exercises exercises exercise_sets functions exercise_logs)
+    for file_name in %w(workouts workout_dates workout_exercises exercises exercise_sets functions exercise_logs set_logs)
       get("#{deploy_to}/current/transfer/#{file_name}.csv", "transfer/#{file_name}.csv")
     end
   end

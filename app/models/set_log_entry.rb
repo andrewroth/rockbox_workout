@@ -5,8 +5,10 @@ class SetLogEntry < ActiveRecord::Base
 
   def to_csv
     super do
-      v = self.exercise_log_entry.created_at.to_i
-      "\nexercise_log_entry_created_at_int,datetime,#{v}"
+      created_at_i = self.exercise_log_entry.created_at.to_i
+      exercise_id = self.exercise_log_entry.exercise_id
+      %|\nexercise_log_entry_created_at_int,datetime,#{created_at_i}
+exercise_id,integer,#{exercise_id}|
     end
   end
 

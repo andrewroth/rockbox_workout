@@ -5,7 +5,7 @@ class SetLogEntry < ActiveRecord::Base
 
   def to_csv
     super do
-      "exercise_set_id,integer,#{workout_set_id}"
+      "\nexercise_set_id,integer,#{workout_set_id}"
     end
   end
 

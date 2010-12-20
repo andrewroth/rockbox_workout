@@ -2,7 +2,7 @@ class ExerciseLogEntry < ActiveRecord::Base
   include Csv
 
   has_many :set_log_entries
-  belongs_to :exercises
+  belongs_to :exercise
 
   def self.write_csv
     super do

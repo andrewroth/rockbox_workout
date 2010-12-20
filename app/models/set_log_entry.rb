@@ -1,4 +1,6 @@
 class SetLogEntry < ActiveRecord::Base
+  belongs_to :exercise_log_entry
+
   def self.read_csv
     sle = nil
     f = File.read(Rails.root.join("transfer/set_logs.csv"))

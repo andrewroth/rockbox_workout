@@ -1,4 +1,19 @@
 class SetLogEntry < ActiveRecord::Base
+  include Csv
+
+  belongs_to :exercise_log_entry
+
+  def to_csv
+    super do
+      created_at_i = self.exercise_log_entry.created_at.to_i
+      "\nexercise_set_id,integer,#{workout_set_id}\nexercise_log_entry_created_at_int,datetime,#{created_at_i}"
+    end
+  end
+
+  def self.write_csv
+    super("transfer/set_logs.csv")
+  end
+
   def self.read_csv
     sle = nil
     f = File.read(Rails.root.join("transfer/set_logs.csv"))

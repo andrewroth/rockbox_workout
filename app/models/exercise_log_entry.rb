@@ -1,6 +1,11 @@
 class ExerciseLogEntry < ActiveRecord::Base
+  include Csv
+
+  has_many :set_log_entries
+  belongs_to :exercise
+
   def self.write_csv
-    write_csv do
+    super("transfer/exercise_logs.csv") do
       WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries)
     end
   end
@@ -23,7 +28,7 @@ class ExerciseLogEntry < ActiveRecord::Base
       when 'workout_date_id'
         ele.workout_date_id = value
       when 'exercise_id'
-        ele.workout_exercise_id = value
+        ele.exercise_id = value
       end
       ele.save! if ele
     end

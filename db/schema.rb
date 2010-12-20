@@ -10,11 +10,11 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20101212045252) do
+ActiveRecord::Schema.define(:version => 20101220004208) do
 
   create_table "exercise_log_entries", :force => true do |t|
     t.integer  "workout_date_id"
-    t.integer  "workout_exercise_id"
+    t.integer  "exercise_id"
     t.integer  "n"
     t.integer  "position"
     t.datetime "created_at"

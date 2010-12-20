@@ -8,7 +8,7 @@ module Csv
       end
 
       out
-    }.join("\n")
+    }.join("\n") + (yield if block_given?).to_s
   end
   def self.included(base)
     base.class_eval do

@@ -1,5 +1,18 @@
 class SetLogEntry < ActiveRecord::Base
+  include Csv
+
   belongs_to :exercise_log_entry
+
+  def to_csv
+    super do
+      v = self.exercise_log_entry.created_at.to_i
+      "\nexercise_log_entry_created_at_int,datetime,#{v}"
+    end
+  end
+
+  def self.write_csv
+    super("transfer/set_logs.csv")
+  end
 
   def self.read_csv
     sle = nil

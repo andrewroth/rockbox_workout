@@ -2,7 +2,7 @@ namespace :db do
   task :dump => :environment do
     password = ActiveRecord::Base.configurations[RAILS_ENV]['password']
     db = ActiveRecord::Base.configurations[RAILS_ENV]['database']
-    system "mysqldump --user root --password=#{password} > /home/deploy/#{db}.sql"
+    system "mysqldump --user root --password=#{password} #{db} > /home/deploy/#{db}.sql"
   end
 
   task :load_dump => :environment do

@@ -22,14 +22,14 @@ class WorkoutDate < ActiveRecord::Base
           wd.save!
         end
 
-        wd = WorkoutDate.find value
+        wd = WorkoutDate.find_by_id value
         #wd = WorkoutDate.find_or_create_by_id value
       when 'started_at_int'
-        wd.started_at = Time.at(value.to_i) if value != '0'
+        wd.started_at = Time.at(value.to_i) if wd && value != '0'
       when 'created_at_int'
-        wd.created_at = Time.at(value.to_i) if value != '0'
+        wd.created_at = Time.at(value.to_i) if wd && value != '0'
       when 'finished_at_int'
-        wd.finished_at = Time.at(value.to_i) if value != '0'
+        wd.finished_at = Time.at(value.to_i) if wd && value != '0'
       end
     end
     wd.save! if wd # save the last workout date

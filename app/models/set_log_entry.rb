@@ -33,8 +33,8 @@ class SetLogEntry < ActiveRecord::Base
         sle.workout_set_id = value
       when 'exercise_log_entry_created_at_int'
         #throw ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).inspect
-        sle.exercise_log_entry_id = ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).id
-        puts sle.exercise_log_entry_id.inspect
+        sle.exercise_log_entry_id = ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).try(:id)
+        #puts sle.exercise_log_entry_id.inspect
       #when 'n'
       #  sle.n = value
       end

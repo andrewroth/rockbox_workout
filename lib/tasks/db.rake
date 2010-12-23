@@ -9,6 +9,6 @@ namespace :db do
     password = ActiveRecord::Base.configurations[RAILS_ENV]['password']
     db = ActiveRecord::Base.configurations[RAILS_ENV]['database']
     system "echo 'drop database if exists #{db}; create database #{db};' | mysql --user root --password=#{password}"
-    system "cat #{db}.sql | mysql --user root --password=#{password}"
+    system "cat #{db}.sql | mysql --user root --password=#{password} #{db}"
   end
 end

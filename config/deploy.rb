@@ -99,7 +99,7 @@ namespace :sansa do
     system "sh #{File.dirname(__FILE__)}/../copy_csvs_from_sansa.sh"
   end
   task :ensure_plugged_in do
-    unless File.directory?("/Volumes/Sansa\ e260")
+    until File.directory?("/Volumes/Sansa\ e260")
       puts "Plug in sansa and hit enter."
       STDIN.gets
     end

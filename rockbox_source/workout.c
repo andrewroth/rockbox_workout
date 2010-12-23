@@ -94,7 +94,7 @@ PLUGIN_HEADER
 #define	WORKOUT_SET_WIDTH		160
 #define	WORKOUT_SET_MARGIN		5
 #define	WORKOUT_SETS_PER_ROW		1
-#define	WORKOUT_DASHBOARD_PERCENT	30.0
+#define	WORKOUT_DASHBOARD_PERCENT	28.0
 #define	WORKOUT_DASHBOARD_TOP		((100.0-WORKOUT_DASHBOARD_PERCENT)/100.0)*SCREEN_HEIGHT
 #define	WORKOUT_DASHBOARD_PROG_HEIGHT	10
 #define	WORKOUT_DASHBOARD_PROG_LEFT	30
@@ -234,6 +234,10 @@ void write_workout_dates(void);
 void write_exercise_logs(void);
 void write_set_log_entries(void);
 void save_all_logs(void);
+void morse_play_int(int i);
+void morse_play(char c);
+void morse_dot(void);
+void morse_dash(void);
 
 /* data allocations */
 workout workouts[MAX_WORKOUTS];
@@ -463,7 +467,7 @@ void tick() {
 					if (playback_exercise_index == 0) {
 						curr_workout_date->started_at = now();
 					}
-					if (playback_set_index == 0) {
+					if (playback_exercise_log != NULL && playback_set_index == 0) {
 						playback_exercise_log->started_at = now();
 					}
 					//playback_last_state_change = now();
@@ -481,6 +485,7 @@ void tick() {
 					break;
 				case EXERCISE_RESTING:
 					/* fun part - move to the next set or exercise */
+					if (playback_set_log == NULL) return;
 					playback_set_log->done_rested_at = now();
 					debug_print("Done resting this set.  Currently at playback_set_index %d and there are %d sets in this exercise", playback_set_index, playback_exercise->num_sets);
 					if (playback_set_index >= playback_exercise->num_sets - 1) {
@@ -1031,6 +1036,10 @@ void draw_workout_dashboard() {
 	rb->lcd_set_foreground(LCD_BLACK);
 	rb->lcd_fillrect(0, WORKOUT_DASHBOARD_TOP, LCD_WIDTH, LCD_HEIGHT - WORKOUT_DASHBOARD_TOP);
 
+	/* draw a simple hr divider */
+	rb->lcd_set_foreground(WORKOUT_COLOR);
+	rb->lcd_hline(0, LCD_WIDTH, WORKOUT_DASHBOARD_TOP);
+
 	/* progress bar */
 	top = WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_TOP;
 	left = WORKOUT_DASHBOARD_PROG_LEFT;
@@ -1056,8 +1065,14 @@ void draw_workout_dashboard() {
 	rb->lcd_set_foreground(LCD_BLACK);
 	rb->lcd_fillrect(LCD_WIDTH * 0.333, WORKOUT_DASHBOARD_TOP + WORKOUT_DASHBOARD_PROG_HEIGHT + 30, LCD_WIDTH * 0.333, 20);
 	rb->lcd_set_foreground(WORKOUT_COLOR);
-	if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
-		rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR[playback_state], (int)playback_stay_seconds);
+	if (playback_exercise == NULL ) {
+		// noop
+	} else if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
+		if (playback_state == EXERCISE_SETTING_UP) {
+			rb->snprintf(line, STR_LEN, "%s [%ds] %d lb", STATE_STR[playback_state], (int)playback_stay_seconds, (int)playback_set->weight);
+		} else {
+			rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR[playback_state], (int)playback_stay_seconds);
+		}
 	} else if (playback_exercise->exercise_type_id == EXERCISE_TYPE_STRETCH) {
 		rb->snprintf(line, STR_LEN, "%s [%ds]", STATE_STR_FOR_STRETCH[playback_state], (int)playback_stay_seconds);
 	}
@@ -1208,9 +1223,10 @@ void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 void exercise_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]) {
 	debug_print("exercise_log_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	
-	if (rb->strcmp(cname, "created_at_int") == 0) {
+	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW EXERCISE LOG");
 		num_exercise_log_entries++;
+	} else if (rb->strcmp(cname, "created_at_int") == 0) {
 		exercise_log_entries[num_exercise_log_entries-1].created_at = rb->atoi(value);
 	} else if (rb->strcmp(cname, "started_at_int") == 0) {
 		exercise_log_entries[num_exercise_log_entries-1].started_at = rb->atoi(value);
@@ -1231,9 +1247,10 @@ void set_log_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR_LEN]
 	rb->snprintf(debug_line_ptr, STR_LEN, "set_log_loaded name: {%s} type: {%s} value: {%s}\n", cname, type, value);
 	debug(debug_line);
 	
-	if (rb->strcmp(cname, "created_at_int") == 0) {
+	if (rb->strcmp(cname, "id") == 0) {
 		debug("NEW SET LOG");
 		num_set_log_entries++;
+	} else if (rb->strcmp(cname, "created_at_int") == 0) {
 		set_log_entries[num_set_log_entries-1].created_at = rb->atoi(value);
 	} else if (rb->strcmp(cname, "started_at_int") == 0) {
 		set_log_entries[num_set_log_entries-1].started_at = rb->atoi(value);
@@ -1489,6 +1506,7 @@ float calculate_function(char variable[STR_LEN], exercise_set *es, long n, float
 void set_playback_state(int state) {
 	float default_value;
 	playback_state = state;
+	if (playback_exercise == NULL) return;
 	if (playback_exercise->exercise_type_id == EXERCISE_TYPE_WEIGHTS) {
 		if (playback_set_index == 0 && playback_state == EXERCISE_SETTING_UP) {
 			default_value = DEFAULT_SECONDS_ON_SETUP_FIRST_EXERCISE;
@@ -1534,6 +1552,7 @@ void write_exercise_logs() {
 	el_fd = rb->open("/exercise_logs.csv", O_CREAT|O_WRONLY|O_TRUNC, 0666);
 	for (i = 0; i < num_exercise_log_entries; i++) {
 		ele = exercise_log_entries + i;
+		rb->fdprintf(el_fd, "id,integer\n");
 		rb->fdprintf(el_fd, "created_at_int,datetime,%ld\n", ele->created_at);
 		rb->fdprintf(el_fd, "started_at_int,datetime,%ld\n", ele->started_at);
 		rb->fdprintf(el_fd, "last_completed_at_int,datetime,%ld\n", ele->last_completed_at);
@@ -1551,6 +1570,7 @@ void write_set_log_entries() {
 	sle_fd = rb->open("/set_logs.csv", O_CREAT|O_WRONLY|O_TRUNC, 0666);
 	for (i = 0; i < num_set_log_entries; i++) {
 		sle = set_log_entries + i;
+		rb->fdprintf(sle_fd, "id,integer\n");
 		rb->fdprintf(sle_fd, "created_at_int,datetime,%ld\n", sle->created_at);
 		rb->fdprintf(sle_fd, "started_at_int,datetime,%ld\n", sle->started_at);
 		rb->fdprintf(sle_fd, "completed_at_int,datetime,%ld\n", sle->completed_at);
@@ -1568,3 +1588,89 @@ void save_all_logs(void) {
 	write_exercise_logs();
 	write_set_log_entries();
 }
+
+void morse_play_int(int val) {
+	char int_s[STR_LEN];
+	unsigned short int i;
+
+	rb->snprintf(int_s, STR_LEN, "%d", val);
+	for (i = 0; i < rb->strlen(int_s); i++) {
+		morse_play(int_s[i]);
+	}
+}
+
+void morse_play(char c) {
+	if (c == '0') {
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+	} else if (c == '1') {
+		morse_dot();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+	} else if (c == '2') {
+		morse_dot();
+		morse_dot();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+	} else if (c == '3') {
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dash();
+		morse_dash();
+	} else if (c == '4') {
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dash();
+	} else if (c == '5') {
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+	} else if (c == '6') {
+		morse_dash();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+	} else if (c == '7') {
+		morse_dash();
+		morse_dash();
+		morse_dot();
+		morse_dot();
+		morse_dot();
+	} else if (c == '8') {
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dot();
+		morse_dot();
+	} else if (c == '9') {
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dash();
+		morse_dot();
+	}
+
+}
+
+void morse_dot() {
+	rb->pcmbuf_beep(2000, 100, 6000);
+	rb->sleep(500);
+}
+
+void morse_dash() {
+	rb->pcmbuf_beep(2000, 400, 6000);
+	rb->sleep(500);
+}
+

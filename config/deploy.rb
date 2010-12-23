@@ -115,3 +115,15 @@ namespace :vm do
     system "sh #{File.dirname(__FILE__)}/../copy_csvs_to_vmware.sh"
   end
 end
+
+namespace :db do
+  task :pull do
+    STDOUT.print "This will destroy the local db and download it from the server, are you sure? (y/n) "
+    confirm = STDIN.gets
+    unless confirm.to_s.downcase == 'y'
+      run("cd #{deploy_to}/current && /usr/bin/env rake db:dump RAILS_ENV=production")
+      get("/home/deploy/workout.sql", "workout.sql")
+      system("rake db:load_dump")
+    end
+  end
+end

@@ -11,7 +11,9 @@ class SetLogEntry < ActiveRecord::Base
   end
 
   def self.write_csv
-    super("transfer/set_logs.csv")
+    super("transfer/set_logs.csv") do
+      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries).flatten.collect(&:set_log_entries).flatten
+    end
   end
 
   def self.read_csv
@@ -33,8 +35,8 @@ class SetLogEntry < ActiveRecord::Base
         sle.workout_set_id = value
       when 'exercise_log_entry_created_at_int'
         #throw ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).inspect
-        sle.exercise_log_entry_id = ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).id
-        puts sle.exercise_log_entry_id.inspect
+        sle.exercise_log_entry_id = ExerciseLogEntry.find_by_created_at(Time.at(value.to_i)).try(:id)
+        #puts sle.exercise_log_entry_id.inspect
       #when 'n'
       #  sle.n = value
       end

@@ -716,7 +716,7 @@ bool workout_fwd_exercise(void) {
 	if (workout_selected_exercise_index < curr_workout->num_exercises - 1) {
 		workout_selected_exercise_index++;
 		workout_selected_exercise = curr_workout->exercises[workout_selected_exercise_index];
-		workout_top_row = MAX(workout_top_row, workout_selected_set->row - WORKOUT_ROWS + 1);
+		workout_top_row = MAX(workout_top_row, workout_selected_exercise->row - WORKOUT_ROWS + 1);
 		return true;
 	} else {
 		return false;
@@ -837,11 +837,11 @@ void draw_workout_menu() {
 			rb->lcd_set_foreground(WORKOUT_MENU_COLOR);
 		}
 		// row text
-		rb->lcd_putsxy(x + WORKOUT_MENU_MARGIN, y, workout_dates[i].workout->name);
+		rb->lcd_putsxy(x + WORKOUT_MENU_MARGIN, y, workout_dates[i + workout_menu_top_item_index].workout->name);
 
 		// workout date
 		y += half_row;
-		rb->lcd_putsxy(LCD_WIDTH * 0.3, y, workout_dates[i].when);
+		rb->lcd_putsxy(LCD_WIDTH * 0.3, y, workout_dates[i + workout_menu_top_item_index].when);
 		y += half_row;
 		y += 2;
 		//y += WORKOUT_MENU_ROW_HEIGHT;

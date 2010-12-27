@@ -6,7 +6,7 @@ class WorkoutExercise < ActiveRecord::Base
 
   def self.write_csv
     super do
-      WorkoutDate.where("finished_at IS NULL").collect(&:workout).flatten.collect(&:workout_exercises).flatten
+      WorkoutDate.where("finished_at IS NULL").collect(&:workout).flatten.collect(&:workout_exercises).flatten.uniq
     end
   end
 end

@@ -1203,20 +1203,18 @@ void workout_date_loaded(char cname[STR_LEN], char type[STR_LEN], char value[STR
 		num_workout_dates++;
 		workout_dates[num_workout_dates-1].id = rb->atoi(value);
 	} else if (rb->strcmp(cname, "workout_id") == 0) {
-		debug("COPY workout_id");
 		//workout_dates[num_workout_dates-1].workout_id = rb->atoi(value);
 		workout_dates[num_workout_dates-1].workout = find_workout(rb->atoi(value));
 		debug_print("       name of workout: %s", workout_dates[num_workout_dates-1].workout->name);
 	} else if (rb->strcmp(cname, "n") == 0) {
-		debug("COPY n");
 		workout_dates[num_workout_dates-1].n = rb->atoi(value);
 	} else if (rb->strcmp(cname, "when_int") == 0) {
-		debug("COPY n");
 		workout_dates[num_workout_dates-1].when_int = rb->atoi(value);
 	} else if (rb->strcmp(cname, "when") == 0) {
-		debug("COPY when");
 		rb->strlcpy(workout_dates[num_workout_dates-1].when, value, 11);
 		workout_dates[num_workout_dates-1].when[12] = 0;
+	} else if (rb->strcmp(cname, "finished_at_int") == 0) {
+		workout_dates[num_workout_dates-1].finished_at = rb->atoi(value);
 	}
 }
 

@@ -6,7 +6,7 @@ class ExerciseLogEntry < ActiveRecord::Base
 
   def self.write_csv
     super("transfer/exercise_logs.csv") do
-      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries)
+      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries).uniq
     end
   end
 

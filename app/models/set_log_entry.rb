@@ -12,7 +12,7 @@ class SetLogEntry < ActiveRecord::Base
 
   def self.write_csv
     super("transfer/set_logs.csv") do
-      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries).flatten.collect(&:set_log_entries).flatten
+      WorkoutDate.where("finished_at IS NULL").collect(&:exercise_log_entries).flatten.collect(&:set_log_entries).flatten.uniq
     end
   end
 

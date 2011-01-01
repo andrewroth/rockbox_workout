@@ -41,7 +41,7 @@ class WorkoutDatesController < ApplicationController
   # POST /workout_dates.xml
   def create
     @workout_date = WorkoutDate.new(params[:workout_date])
-    @workout_date.n ||= WorkoutDate.maximum(:n) + 1
+    @workout_date.n ||= WorkoutDate.next_free_n(@workout_date.workout_id)
 
     respond_to do |format|
       if @workout_date.save
@@ -58,6 +58,7 @@ class WorkoutDatesController < ApplicationController
   # PUT /workout_dates/1.xml
   def update
     @workout_date = WorkoutDate.find(params[:id])
+    @workout_date.n ||= WorkoutDate.next_free_n(@workout_date.workout_id)
 
     respond_to do |format|
       if @workout_date.update_attributes(params[:workout_date])

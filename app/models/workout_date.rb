@@ -34,4 +34,13 @@ class WorkoutDate < ActiveRecord::Base
     end
     wd.save! if wd # save the last workout date
   end
+
+  def self.maximum_n_from_workout_id(workout_id)
+    self.maximum(:n, :conditions => [ 'workout_id = ?', workout_id ])
+  end
+
+  def self.next_free_n(workout_id)
+    max_n = self.maximum_n_from_workout_id(workout_id)
+    max_n ? max_n + 1 : 0
+  end
 end

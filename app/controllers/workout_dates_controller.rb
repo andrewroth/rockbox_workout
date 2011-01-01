@@ -58,7 +58,7 @@ class WorkoutDatesController < ApplicationController
   # PUT /workout_dates/1.xml
   def update
     @workout_date = WorkoutDate.find(params[:id])
-    @workout_date.n ||= WorkoutDate.next_free_n(@workout_date.workout_id)
+    @workout_date.n ||= WorkoutDate.next_free_n(params[:workout_id])
 
     respond_to do |format|
       if @workout_date.update_attributes(params[:workout_date])

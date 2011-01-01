@@ -61,7 +61,10 @@ class WorkoutDatesController < ApplicationController
     @workout_date.n ||= WorkoutDate.next_free_n(@workout_date.workout_id)
 
     respond_to do |format|
-      if @workout_date.update_attributes(params[:workout_date])
+      @workout_date.attributes = params[:workout_date]
+      @workout_date.n ||= WorkoutDate.next_free_n(@workout_date.workout_id)
+
+      if @workout_date.save
         format.html { redirect_to(@workout_date, :notice => 'Workout date was successfully updated.') }
         format.xml  { head :ok }
       else

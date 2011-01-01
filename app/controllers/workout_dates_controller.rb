@@ -41,6 +41,7 @@ class WorkoutDatesController < ApplicationController
   # POST /workout_dates.xml
   def create
     @workout_date = WorkoutDate.new(params[:workout_date])
+    @workout_date.n ||= WorkoutDate.maximum(:n) + 1
 
     respond_to do |format|
       if @workout_date.save

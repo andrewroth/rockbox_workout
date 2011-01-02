@@ -26,9 +26,9 @@ class ExerciseLogEntry < ActiveRecord::Base
       when 'finished_at_int'
         ele.finished_at = Time.at(value.to_i) if value != '0'
       when 'workout_date_id'
-        ele.workout_date_id = value
+        ele.workout_date_id = value if ele
       when 'exercise_id'
-        ele.exercise_id = value
+        ele.exercise_id = value if ele
       end
       ele.save! if ele
     end

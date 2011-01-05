@@ -1,5 +1,6 @@
 source 'http://rubygems.org'
 
+gem "jquery-rails"
 gem 'rails', '3.0.0'
 
 # Bundle edge Rails instead:
@@ -9,6 +10,7 @@ gem 'sqlite3-ruby', :require => 'sqlite3'
 gem 'mysql2'
 
 gem 'ruby-debug'
+
 
 # Use unicorn as the web server
 # gem 'unicorn'

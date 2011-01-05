@@ -1,0 +1,1 @@
+page["##{@exercise_set.id}"].fadeOut

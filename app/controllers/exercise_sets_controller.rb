@@ -76,6 +76,7 @@ class ExerciseSetsController < ApplicationController
     @exercise_set.destroy
 
     respond_to do |format|
+      format.js
       format.html { redirect_to(exercise_sets_url) }
       format.xml  { head :ok }
     end

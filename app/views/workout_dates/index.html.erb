@@ -1,5 +1,7 @@
 <h1>Listing workout_dates</h1>
 
+<%= link_to "Show finished workouts", workout_dates_path(:show_finished => true) %>
+
 <table>
   <tr>
     <th>When</th>
@@ -18,6 +20,7 @@
     <td><%= link_to 'Show', workout_date %></td>
     <td><%= link_to 'Edit', edit_workout_date_path(workout_date) %></td>
     <td><%= link_to 'Destroy', workout_date, :confirm => 'Are you sure?', :method => :delete %></td>
+    <td><%= link_to 'Finish', finish_workout_date_path(workout_date), :method => :post %></td>
   </tr>
 <% end %>
 </table>

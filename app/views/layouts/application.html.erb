@@ -6,19 +6,20 @@
   <%= javascript_include_tag "jquery" %>
   <%= javascript_include_tag :defaults %>
   <%= csrf_meta_tag %>
+  <script type="text/javascript" src="/javascripts/swfobject.js"></script>
 </head>
 <body>
 
-  <%= link_to "Exercise Types", exercise_types_url %>
+  <%= link_to "Exercise Types", exercise_types_path %>
   - 
-  <%= link_to "Workout Dates", workout_dates_url %>
+  <%= link_to "Workout Dates", workout_dates_path %>
   -
-  <%= link_to "Workouts", workouts_url %>
-  <%= link_to "Exercises", exercises_url %>
-  <%= link_to "WorkoutExercises", workout_exercises_url %>
-  <%= link_to "Sets", exercise_sets_url %>
+  <%= link_to "Workouts", workouts_path %>
+  <%= link_to "Exercises", exercises_path %>
+  <%= link_to "WorkoutExercises", workout_exercises_path %>
+  <%= link_to "Sets", exercise_sets_path %>
   - 
-  <%= link_to "Functions", functions_url %>
+  <%= link_to "Functions", functions_path %>
 
   <div style="color: red">
     <% if flash[:notice] %>

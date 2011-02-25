@@ -10,6 +10,16 @@
   <%= @workout.n %>
 </p>
 
+<UL>
+<%- @workout.exercises.each do |exercise| %>
+  <LI><%= exercise.name %></LI>
+  <UL>
+    <%- exercise.exercise_sets.each do |set| -%>
+      <LI><%= set.name %></LI>
+    <%- end -%>
+  </UL>
+<%- end -%>
+</UL>
 
 <%= link_to 'Edit', edit_workout_path(@workout) %> |
 <%= link_to 'Back', workouts_path %>

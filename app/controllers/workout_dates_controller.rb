@@ -4,6 +4,12 @@ class WorkoutDatesController < ApplicationController
   def index
     @workout_dates = WorkoutDate.all
 
+    if params[:show_finished] == 'true'
+      @workout_dates = WorkoutDate.all
+    else
+      @workout_dates = WorkoutDate.find_all_by_finished_at nil
+    end
+
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @workout_dates }
@@ -72,6 +78,14 @@ class WorkoutDatesController < ApplicationController
         format.xml  { render :xml => @workout_date.errors, :status => :unprocessable_entity }
       end
     end
+  end
+
+  def finish
+    @workout_date = WorkoutDate.find(params[:id])
+    @workout_date.finished_at = Time.now
+    @workout_date.save!
+    flash[:notify] = "Workout date finished."
+    redirect_to workout_dates_path
   end
 
   # DELETE /workout_dates/1

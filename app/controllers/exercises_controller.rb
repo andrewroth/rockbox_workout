@@ -32,7 +32,16 @@ class ExercisesController < ApplicationController
     @exercise = Exercise.find(params[:id])
 
     respond_to do |format|
-      format.html # show.html.erb
+      format.html {
+        @graph = open_flash_chart_object(600, 300, url_for(:action => 'show', :format => :json))
+      }
+
+      format.json { 
+        chart = setup_chart
+        puts chart.to_s
+        render :text => chart, :layout => false
+      }                   
+
       format.xml  { render :xml => @exercise }
     end
   end
@@ -96,4 +105,62 @@ class ExercisesController < ApplicationController
       format.xml  { head :ok }
     end
   end
+
+  protected
+
+    def setup_chart
+      title = Title.new("Multiple Lines")
+
+      data1 = []
+      data2 = []
+      data3 = []
+
+      10.times do |x|
+        data1 << rand(5) + 1
+        data2 << rand(6) + 7
+        data3 << rand(5) + 14
+      end
+
+      line_dot = Line.new
+      line_dot.text = "Line Dot"
+      line_dot.width = 4
+      line_dot.colour = '#DFC329'
+      line_dot.dot_size = 5
+      line_dot.values = data1
+
+      line_hollow = Line.new
+      line_hollow.text = "Line Hollow"
+      line_hollow.width = 1
+      line_hollow.colour = '#6363AC'
+      line_hollow.dot_size = 5
+      line_hollow.values = data2
+
+      line = Line.new
+      line.text = "Line"
+      line.width = 1
+      line.colour = '#5E4725'
+      line.dot_size = 5
+      line.values = data3
+
+      y = YAxis.new
+      y.set_range(0,20,5)
+
+      x_legend = XLegend.new("MY X Legend")
+      x_legend.set_style('{font-size: 20px; color: #778877}')
+
+      y_legend = YLegend.new("MY Y Legend")
+      y_legend.set_style('{font-size: 20px; color: #770077}')
+
+      chart =OpenFlashChart.new
+      chart.set_title(title)
+      chart.set_x_legend(x_legend)
+      chart.set_y_legend(y_legend)
+      chart.y_axis = y
+
+      chart.add_element(line_dot)
+      chart.add_element(line_hollow)
+      chart.add_element(line)
+
+      return chart
+    end
 end

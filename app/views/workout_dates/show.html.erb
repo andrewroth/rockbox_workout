@@ -7,9 +7,25 @@
 
 <p>
   <b>Workout:</b>
-  <%= @workout_date.workout_id %>
+  <%= @workout_date.workout.name %>
 </p>
 
+<UL>
+  <%- n = @workout_date.n -%>
+  <%- @workout_date.workout.exercises.each do |exercise| %>
+    <LI><%= exercise.name %> (<%= exercise.exercise_type.name %>)</LI>
+    <UL>
+      <%- exercise.exercise_sets.each do |set| -%>
+        <%- if exercise.exercise_type.name == "weights" -%>
+        <LI><%= set.name %> <strong><%= set.value_of("weight", n) %>lb</strong></LI>
+        <%- end -%>
+        <%- if exercise.exercise_type.name == "stretch" -%>
+        <LI><%= set.name %> <%= set.value_of("hold_for", n) %></LI>
+        <%- end -%>
+      <%- end -%>
+    </UL>
+  <%- end -%>
+</UL>
 
 <%= link_to 'Edit', edit_workout_date_path(@workout_date) %> |
 <%= link_to 'Back', workout_dates_path %>

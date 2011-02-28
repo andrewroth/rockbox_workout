@@ -1,39 +1,6 @@
 <h1>Listing functions</h1>
 
-<table>
-  <tr>
-    <th>Set</th>
-    <th>Variable</th>
-    <!--<th>Type</th>-->
-    <th>Base</th>
-    <th>Inc</th>
-    <th>Round to nearest</th>
-    <th>Min n</th>
-    <th>Max n</th>
-    <th>Min v</th>
-    <th>Max v</th>
-    <th></th>
-    <th></th>
-    <th></th>
-  </tr>
-
-<% @functions.each do |function| %>
-  <tr>
-    <td><%= function.exercise_set.name_with_exercise %></td>
-    <td><%= function.variable %></td>
-    <td><%= function.base %></td>
-    <td><%= function.inc %></td>
-    <td><%= function.round_to_nearest %></td>
-    <td><%= function.min_n %></td>
-    <td><%= function.max_n %></td>
-    <td><%= function.min_v %></td>
-    <td><%= function.max_v %></td>
-    <td><%= link_to 'Show', function_url(function.id) %></td>
-    <td><%= link_to 'Edit', edit_function_url(function) %></td>
-    <td><%= link_to 'Destroy', function_url(function.id), :confirm => 'Are you sure?', :method => :delete %></td>
-  </tr>
-<% end %>
-</table>
+<%= render "functions_table" %>
 
 <br />
 

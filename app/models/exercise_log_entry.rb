@@ -2,7 +2,12 @@ class ExerciseLogEntry < ActiveRecord::Base
   include Csv
 
   has_many :set_log_entries
+  belongs_to :workout_date
   belongs_to :exercise
+
+  def n
+    workout_date.try(:n)
+  end
 
   def self.write_csv
     super("transfer/exercise_logs.csv") do

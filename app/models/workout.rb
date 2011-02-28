@@ -2,6 +2,7 @@ class Workout < ActiveRecord::Base
   include Csv
 
   has_many :workout_exercises
+  has_many :workout_dates
   has_many :exercises, :through => :workout_exercises
 
   def self.write_csv

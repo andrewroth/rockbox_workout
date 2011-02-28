@@ -13,7 +13,7 @@
 <UL>
   <%- n = @workout_date.n -%>
   <%- @workout_date.workout.exercises.each do |exercise| %>
-    <LI><%= exercise.name %> (<%= exercise.exercise_type.name %>)</LI>
+    <LI><%= link_to exercise.name, exercise %> (<%= exercise.exercise_type.name %>)</LI>
     <UL>
       <%- exercise.exercise_sets.each do |set| -%>
         <%- if exercise.exercise_type.name == "weights" -%>

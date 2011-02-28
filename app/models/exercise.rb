@@ -2,6 +2,8 @@ class Exercise < ActiveRecord::Base
   include Csv
 
   belongs_to :exercise_type
+  has_many :workout_exercises
+  has_many :workouts, :through => :workout_exercises
   has_many :exercise_sets
 
   def self.write_csv

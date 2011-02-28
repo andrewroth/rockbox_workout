@@ -5,7 +5,11 @@ RockboxWorkout::Application.routes.draw do
 
   resources :workout_log_entries
 
-  resources :workout_dates
+  resources :workout_dates do
+    member do
+      post :finish
+    end
+  end
 
   resources :functions
 

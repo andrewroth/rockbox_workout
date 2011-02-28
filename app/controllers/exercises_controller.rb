@@ -37,7 +37,7 @@ class ExercisesController < ApplicationController
       }
 
       format.json { 
-        chart = setup_chart
+        chart = setup_chart @exercise
         puts chart.to_s
         render :text => chart, :layout => false
       }                   
@@ -108,8 +108,8 @@ class ExercisesController < ApplicationController
 
   protected
 
-    def setup_chart
-      title = Title.new("Multiple Lines")
+    def setup_chart(exercise)
+      title = Title.new(exercise.name)
 
       data1 = []
       data2 = []
@@ -121,45 +121,49 @@ class ExercisesController < ApplicationController
         data3 << rand(5) + 14
       end
 
-      line_dot = Line.new
-      line_dot.text = "Line Dot"
-      line_dot.width = 4
-      line_dot.colour = '#DFC329'
-      line_dot.dot_size = 5
-      line_dot.values = data1
+      max_y = 0
+      lines = []
+      for ex_set in exercise.exercise_sets
+        # weight
+        line = Line.new
+        line.text = "Weight-#{ex_set.name}"
+        line.width = 1
+        line.colour = '#5E4725'
+        line.dot_size = 5
+        line.values = ex_set.weights_goal_arr
+        max_y = (m = ex_set.weights_goal_arr.collect(&:to_i).max) > max_y ? m : max_y
+        lines << line
 
-      line_hollow = Line.new
-      line_hollow.text = "Line Hollow"
-      line_hollow.width = 1
-      line_hollow.colour = '#6363AC'
-      line_hollow.dot_size = 5
-      line_hollow.values = data2
+        # amount
+        line = Line.new
+        line.text = "Reps-#{ex_set.name}"
+        line.width = 2
+        line.colour = '#6363AC'
+        line.dot_size = 10
+        line.values = ex_set.reps_goal_arr
+        max_y = (m = ex_set.reps_goal_arr.collect(&:to_i).max) > max_y ? m : max_y
 
-      line = Line.new
-      line.text = "Line"
-      line.width = 1
-      line.colour = '#5E4725'
-      line.dot_size = 5
-      line.values = data3
+        lines << line
+      end
 
       y = YAxis.new
-      y.set_range(0,20,5)
+      y.set_range(0,max_y*1.2,5)
 
-      x_legend = XLegend.new("MY X Legend")
+      x_legend = XLegend.new("n")
       x_legend.set_style('{font-size: 20px; color: #778877}')
 
-      y_legend = YLegend.new("MY Y Legend")
+      y_legend = YLegend.new("")
       y_legend.set_style('{font-size: 20px; color: #770077}')
 
-      chart =OpenFlashChart.new
+      chart = OpenFlashChart.new
       chart.set_title(title)
       chart.set_x_legend(x_legend)
       chart.set_y_legend(y_legend)
       chart.y_axis = y
 
-      chart.add_element(line_dot)
-      chart.add_element(line_hollow)
-      chart.add_element(line)
+      for line in lines
+        chart.add_element(line)
+      end
 
       return chart
     end

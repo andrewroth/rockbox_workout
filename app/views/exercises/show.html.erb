@@ -14,5 +14,10 @@
 
 <br/>
 
+<%- @exercise.exercise_sets.each do |set| %>
+  <%- @functions = set.functions %>
+  <%= render :partial => "functions/functions_table" %>
+<%- end -%>
+
 <%= link_to 'Edit', edit_exercise_path(@exercise) %> |
 <%= link_to 'Back', exercises_path %>

@@ -31,7 +31,7 @@ task :local_symlinks, :roles => :app do
   run "ln -s #{shared_path}/config/database.yml #{release_path}/config/database.yml"
   run "ln -s #{shared_path}/tmp/sessions #{release_path}/tmp/sessions"
   run "mkdir #{release_path}/transfer"
-  run "bundle install"
+  #run "cd #{release_path} && /opt/ruby/bin/bundle install"
   sudo "chgrp -R #{fetch(:group)} #{release_path}"
   sudo "chmod -R g+w #{release_path}"
 end

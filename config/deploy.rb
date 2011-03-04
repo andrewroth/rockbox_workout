@@ -29,6 +29,7 @@ after 'deploy:update_code', 'local_symlinks'
 desc "Add linked files after deploy and set permissions"
 task :local_symlinks, :roles => :app do
   run "ln -s #{shared_path}/config/database.yml #{release_path}/config/database.yml"
+  run "ln -s #{shared_path}/config/initializers/auth.rb #{release_path}/config/initializers/auth.rb"
   run "ln -s #{shared_path}/tmp/sessions #{release_path}/tmp/sessions"
   run "mkdir #{release_path}/transfer"
   #run "cd #{release_path} && /opt/ruby/bin/bundle install"
@@ -127,4 +128,9 @@ namespace :db do
       system("rake db:load_dump")
     end
   end
+end
+
+task :demo do
+  set :user, "deploy"
+  set :deploy_to, "/var/www/workoutdemo.andrewroth.ca"
 end

@@ -7,3 +7,4 @@ config/database.yml
 log
 Gemfile.lock
 *.swp
+config/initializers/auth.rb

@@ -13,12 +13,10 @@ class ApplicationController < ActionController::Base
   # end
   #
   # Add it to #{shared_path}/config/initializers/auth.rb on your server.
-  def authenticate
-    authenticate_or_request_with_http_basic do |username, password|
-      if defined?(Auth)
+  if defined?(Auth)
+    def authenticate
+      authenticate_or_request_with_http_basic do |username, password|
         username == Auth::USERNAME && password == Auth::PASSWORD
-      else
-        true
       end
     end
   end

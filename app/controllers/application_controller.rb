@@ -3,8 +3,6 @@ class ApplicationController < ActionController::Base
   include OpenFlashChart::Controller
   include OpenFlashChart
 
-  before_filter :authenticate
-
   # add an initializer with
   #
   # module Auth
@@ -14,6 +12,7 @@ class ApplicationController < ActionController::Base
   #
   # Add it to #{shared_path}/config/initializers/auth.rb on your server.
   if defined?(Auth)
+    before_filter :authenticate
     def authenticate
       authenticate_or_request_with_http_basic do |username, password|
         username == Auth::USERNAME && password == Auth::PASSWORD

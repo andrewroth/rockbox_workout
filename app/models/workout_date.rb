@@ -6,7 +6,7 @@ class WorkoutDate < ActiveRecord::Base
 
   def self.write_csv
     super do
-      WorkoutDate.where("finished_at IS NULL", :order => :when).uniq
+      WorkoutDate.where("finished_at IS NULL").order('`when`').uniq
     end
   end
 

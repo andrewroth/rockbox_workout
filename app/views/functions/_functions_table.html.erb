@@ -32,12 +32,13 @@
   </tr>
   <%- for workout in function.exercise_set.exercise.workouts -%>
     <%- next unless function.variable == "weight" -%>
-    <tr>
+    <%- n = WorkoutDate.next_free_n(workout.id) - 1 -%>
+    <%- not_applied = function.value(n).nil? -%>
+    <tr class="<%= "not_applied" if not_applied %>">
       <td colspan="12" style="padding-left: 50px">
-        <%- n = WorkoutDate.next_free_n(workout.id) - 1 -%>
         <%- for m in (Math.max(0,n-5)..n+5) -%>
           <%- if n == m -%><strong><%- end -%>
-            <%= m %>:<%= function.exercise_set.value_of(function.variable, m) -%>
+            <%= m %>:<%= function.value(m) -%>
           <%- if n == m -%></strong><%- end -%>
         <%- end -%>
       </td>

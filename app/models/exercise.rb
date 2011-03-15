@@ -4,7 +4,7 @@ class Exercise < ActiveRecord::Base
   belongs_to :exercise_type
   has_many :workout_exercises
   has_many :workouts, :through => :workout_exercises
-  has_many :exercise_sets
+  has_many :exercise_sets, :order => :position
 
   def self.write_csv
     super do

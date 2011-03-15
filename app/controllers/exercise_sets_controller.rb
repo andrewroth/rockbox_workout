@@ -2,7 +2,7 @@ class ExerciseSetsController < ApplicationController
   # GET /exercise_sets
   # GET /exercise_sets.xml
   def index
-    @exercise_sets = ExerciseSet.all
+    @exercise_sets = ExerciseSet.all :joins => :exercise, :order => 'exercises.name ASC, position ASC'
 
     respond_to do |format|
       format.html # index.html.erb

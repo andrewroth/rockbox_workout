@@ -15,6 +15,10 @@
     <%= f.label :exercise_set_id %><br />
     <%= f.collection_select :exercise_set_id, ExerciseSet.all, :id, :name_with_exercise %>
   </div>
+  <div class="field">
+    <%= f.label :workout_id %><br />
+    <%= f.collection_select :workout_id, Workout.all, :id, :name, :include_blank => true %>
+  </div>
   <!--
   <div class="field">
     <%= f.label :type %><br />

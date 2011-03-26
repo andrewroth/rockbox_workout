@@ -32,6 +32,7 @@
   </tr>
   <%- for workout in function.exercise_set.exercise.workouts -%>
     <%- next unless function.variable == "weight" -%>
+    <%- next if function.workout.present? && function.workout != workout -%>
     <%- n = WorkoutDate.next_free_n(workout.id) - 1 -%>
     <%- not_applied = function.value(n).nil? -%>
     <tr class="<%= "not_applied" if not_applied %>">

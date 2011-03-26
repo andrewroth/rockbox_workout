@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20101220004208) do
+ActiveRecord::Schema.define(:version => 20110326025000) do
 
   create_table "exercise_log_entries", :force => true do |t|
     t.integer  "workout_date_id"
@@ -56,17 +56,18 @@ ActiveRecord::Schema.define(:version => 20101220004208) do
 
   create_table "functions", :force => true do |t|
     t.string   "type"
-    t.decimal  "base"
-    t.decimal  "inc"
-    t.decimal  "round_to_nearest"
-    t.decimal  "min_n"
-    t.decimal  "max_n"
-    t.decimal  "min_v"
-    t.decimal  "max_v"
+    t.decimal  "base",             :precision => 10, :scale => 0
+    t.decimal  "inc",              :precision => 10, :scale => 0
+    t.decimal  "round_to_nearest", :precision => 10, :scale => 0
+    t.decimal  "min_n",            :precision => 10, :scale => 0
+    t.decimal  "max_n",            :precision => 10, :scale => 0
+    t.decimal  "min_v",            :precision => 10, :scale => 0
+    t.decimal  "max_v",            :precision => 10, :scale => 0
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "variable"
     t.integer  "exercise_set_id"
+    t.integer  "workout_id"
   end
 
   create_table "set_functions", :force => true do |t|
@@ -79,17 +80,17 @@ ActiveRecord::Schema.define(:version => 20101220004208) do
 
   create_table "set_log_entries", :force => true do |t|
     t.integer  "exercise_log_entry_id"
+    t.integer  "workout_set_id"
     t.integer  "position"
-    t.decimal  "v1"
-    t.decimal  "v2"
-    t.decimal  "v3"
-    t.decimal  "v4"
-    t.decimal  "v5"
-    t.decimal  "v6"
-    t.decimal  "v7"
+    t.decimal  "v1",                    :precision => 10, :scale => 0
+    t.decimal  "v2",                    :precision => 10, :scale => 0
+    t.decimal  "v3",                    :precision => 10, :scale => 0
+    t.decimal  "v4",                    :precision => 10, :scale => 0
+    t.decimal  "v5",                    :precision => 10, :scale => 0
+    t.decimal  "v6",                    :precision => 10, :scale => 0
+    t.decimal  "v7",                    :precision => 10, :scale => 0
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "workout_set_id"
     t.datetime "started_at"
     t.datetime "completed_at"
     t.datetime "done_rested_at"

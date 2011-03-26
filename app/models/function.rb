@@ -1,6 +1,7 @@
 class Function < ActiveRecord::Base
   include Csv
   belongs_to :exercise_set
+  belongs_to :workout
 
   def selwrite_csv
     super do

@@ -15,8 +15,11 @@ class ExerciseSet < ActiveRecord::Base
     "#{exercise.name} - #{name} [#{exercise.exercise_type.variables.join(', ')}]"
   end
 
-  def value_of(variable, n)
+  def value_of(variable, n, workout = nil)
     functions.find_all_by_variable(variable).each do |f|
+      if workout.present? && f.workout && f.workout != workout
+        next
+      end
       value = f.value(n)
       return value if value
     end

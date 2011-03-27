@@ -130,20 +130,18 @@ class ExercisesController < ApplicationController
         line.width = 1
         line.colour = '#5E4725'
         line.dot_size = 5
-        line.values = ex_set.weights_goal_arr
-        max_y = (m = ex_set.weights_goal_arr.collect(&:to_i).max) > max_y ? m : max_y
+        line.values = (arr = ex_set.weights_goal_arr)
+        max_y = (m = arr.collect(&:to_i).max).to_i > max_y ? m : max_y
         lines << line
 
-        # amount
+        # reps
         line = Line.new
         line.text = "Reps-#{ex_set.name}"
         line.width = 2
         line.colour = '#6363AC'
         line.dot_size = 10
-        line.values = ex_set.reps_goal_arr
-        max_y = (m = ex_set.reps_goal_arr.collect(&:to_i).max) > max_y ? m : max_y
-
-        lines << line
+        line.values = (arr = ex_set.reps_goal_arr)
+        max_y = (m = arr.collect(&:to_i).max).to_i > max_y ? m : max_y
       end
 
       y = YAxis.new

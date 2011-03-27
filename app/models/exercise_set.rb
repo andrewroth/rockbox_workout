@@ -27,10 +27,13 @@ class ExerciseSet < ActiveRecord::Base
   end
 
   def weights_goal_hash
-    Hash[set_log_entries.collect(&:exercise_log_entry).collect{ |sle| 
-      n = sle.n.to_i
-      [ n, self.value_of("weight", n) ]
-    }]
+    ns = set_log_entries.collect(&:exercise_log_entry).collect &:n
+    min_n = ns.min.to_i; max_n = [ ns.max.to_i, min_n + 5 ].max
+    weights = ActiveSupport::OrderedHash.new
+    (min_n..max_n).each { |n|
+      weights[n] = self.value_of("weight", n)
+    }
+    return weights
   end
 
   def weights_goal_arr
@@ -38,8 +41,11 @@ class ExerciseSet < ActiveRecord::Base
   end
 
   def reps_goal_hash
-    n_v = set_log_entries.collect(&:exercise_log_entry).collect{ |sle| 
-      n = sle.n.to_i
+    #n_v = set_log_entries.collect(&:exercise_log_entry).collect{ |sle| 
+    #  n = sle.n.to_i
+    ns = set_log_entries.collect(&:exercise_log_entry).collect &:n
+    min_n = ns.min.to_i; max_n = [ ns.max.to_i, min_n + 5 ].max
+    n_v = (min_n..max_n).collect { |n|
       [ n, self.value_of("reps", n).to_i ]
     }
     n_v.sort!{ |n1,n2| n1.first <=> n2.first }

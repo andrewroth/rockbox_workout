@@ -2,12 +2,10 @@ class WorkoutDatesController < ApplicationController
   # GET /workout_dates
   # GET /workout_dates.xml
   def index
-    @workout_dates = WorkoutDate.all
-
     if params[:show_finished] == 'true'
-      @workout_dates = WorkoutDate.all
+      @workout_dates = WorkoutDate.all :order => "`when` ASC"
     else
-      @workout_dates = WorkoutDate.find_all_by_finished_at nil
+      @workout_dates = WorkoutDate.find_all_by_finished_at nil, :order => "`when` ASC"
     end
 
     respond_to do |format|

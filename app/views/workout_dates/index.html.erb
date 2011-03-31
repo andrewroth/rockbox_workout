@@ -5,6 +5,7 @@
 <table>
   <tr>
     <th>When</th>
+    <th>Day</th>
     <th>Workout</th>
     <th>n</th>
     <th></th>
@@ -15,6 +16,7 @@
 <% @workout_dates.each do |workout_date| %>
   <tr>
     <td><%= workout_date.when %></td>
+    <td><%= workout_date.when.strftime("%a") %></td>
     <td><%= workout_date.workout.name %></td>
     <td><%= workout_date.n %></td>
     <td><%= link_to 'Show', workout_date %></td>

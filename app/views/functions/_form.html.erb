@@ -13,7 +13,8 @@
 
   <div class="field">
     <%= f.label :exercise_set_id %><br />
-    <%= f.collection_select :exercise_set_id, ExerciseSet.all, :id, :name_with_exercise %>
+    <%= f.collection_select :exercise_set_id, 
+      ExerciseSet.all.sort{ |e1, e2| e1.name_with_exercise <=> e2.name_with_exercise }, :id, :name_with_exercise %>
   </div>
   <div class="field">
     <%= f.label :workout_id %><br />

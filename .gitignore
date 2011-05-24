@@ -8,3 +8,4 @@ log
 Gemfile.lock
 *.swp
 config/initializers/auth.rb
+password.txt

@@ -4,6 +4,7 @@ set :scm, "git"
 set :use_sudo, true
 set :user, "deploy"
 set :group, "www-data"
+set :password, File.read("password.txt").chomp
 #set :port, 40022
 default_run_options[:pty] = true
 

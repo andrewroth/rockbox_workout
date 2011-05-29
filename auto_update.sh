@@ -8,6 +8,7 @@ while (true)
   if File.exists?("/Volumes/Sansa e260")
     puts "Found!"
     system("cd /Users/andrewroth/Development/rockbox_workout && cap sync")
+    puts "Done."
     sleep SYNC_DELAY
   end
   sleep CHECK_DELAY

@@ -1,3 +1,4 @@
+<%- @wd = @workout_date %>
 <p id="notice"><%= notice %></p>
 
 <p>
@@ -8,22 +9,64 @@
 <p>
   <b>Workout:</b>
   <%= @workout_date.workout.name %> <%= "&nbsp".html_safe*10 %> N: <%= @workout_date.n %>
+  <%- if @last_wd = @workout_date.last %>
+    <%= "&nbsp".html_safe*10 %> <%= link_to "Last Workout Date", workout_date_path(@last_wd) %>
+  <%- end %>
 </p>
 
-<UL>
+<table>
   <%- n = @workout_date.n -%>
-  <%- @workout_date.workout.exercises.each do |exercise| %>
-    <LI><%= link_to exercise.name, exercise %> (<%= exercise.exercise_type.name %>)</LI>
-    <UL>
-      <%- exercise.exercise_sets.each do |set| -%>
+  <%- @workout_date.workout.exercises.each do |exercise|
+        if @last_wd = @workout_date.last
+          @last_ele = @workout_date.last.exercise_log_entries.find_by_exercise_id(exercise.id)
+        end
+        @ele = @workout_date.exercise_log_entries.find_by_exercise_id(exercise.id)
+   %>
+    <tr>
+      <td colspan="2">
+      <%= link_to exercise.name, exercise %> (<%= exercise.exercise_type.name %>)
+      </td>
+    </tr>
+    <tr>
+      <th>&nbsp;</th>
+      <th>Set Name</th>
+      <th>Last Time</th>
+      <th>Manual Goal</th>
+      <th>Long-term Goal</th>
+      <th>Actual</th>
+    </tr>
+    <%- exercise.exercise_sets.each do |set| -%>
+      <%- @sle = @ele.set_log_entries.find_by_set_id(set) if @ele %>
+      <%- @last_sle = @last_ele.set_log_entries.find_by_set_id(set) if @last_ele %>
+      <tr>
+        <td>&nbsp;</td><!-- space -->
         <%- if exercise.exercise_type.name == "weights" -%>
-        <LI><%= set.name %> <strong><%= set.value_of("weight", n, @workout_date.workout) %>lb</strong></LI>
+          <td>
+            <%= set.name %>
+          </td>
+          <td>
+            <%= @last_sle.try(:reps) %>x
+            <%= @last_sle.try(:weight) %>
+          </td>
+          <td>
+            <%= text_field_tag "manual_reps", @workout_date.goal(set, "reps"), :style => "width: 20px" %>x
+            <%= text_field_tag "manual_wt", @workout_date.goal(set, "weight"), :style => "width: 50px" %>
+          </td>
+          <td>
+            <%= set.value_of("reps", n, @wd.workout) %>x<%= set.value_of("weight", n, @wd.workout) %>
+          </td>
+          <td>
+            <%- if @sle %>
+              <%= text_field_tag "actual_reps", @sle.reps, :style => "width: 20px" %>x
+              <%= text_field_tag "actual_wt", @sle.weight, :style => "width: 50px" %>
+            <%- end %>
+          </td>
         <%- end -%>
         <%- if exercise.exercise_type.name == "stretch" -%>
-        <LI><%= set.name %> <%= set.value_of("hold_for", n) %></LI>
+        <td><%= set.name %> <%= set.value_of("hold_for", n) %></td>
         <%- end -%>
-      <%- end -%>
-    </UL>
+      </tr>
+    <%- end -%>
   <%- end -%>
 </UL>
 

@@ -111,26 +111,27 @@ class ExercisesController < ApplicationController
     def setup_chart(exercise)
       title = Title.new(exercise.name)
 
-      data1 = []
-      data2 = []
-      data3 = []
-
-      10.times do |x|
-        data1 << rand(5) + 1
-        data2 << rand(6) + 7
-        data3 << rand(5) + 14
-      end
-
       max_y = 0
       lines = []
       for ex_set in exercise.exercise_sets
         # weight
         line = Line.new
-        line.text = "Weight-#{ex_set.name}"
+        line.text = "#{ex_set.name}"
         line.width = 1
         line.colour = '#5E4725'
         line.dot_size = 5
         line.values = (arr = ex_set.weights_goal_arr)
+        last_n = ex_set.weights_goal_hash.keys.max
+        max_y = (m = arr.collect(&:to_i).max).to_i > max_y ? m : max_y
+        lines << line
+
+        # weight goal
+        line = Line.new
+        line.text = "#{ex_set.name} goal"
+        line.width = 1
+        line.colour = '#ff0000'
+        line.dot_size = 5
+        line.values = (arr = ex_set.weights_goal_arr(:start_n => last_n, :project => 5))
         max_y = (m = arr.collect(&:to_i).max).to_i > max_y ? m : max_y
         lines << line
 

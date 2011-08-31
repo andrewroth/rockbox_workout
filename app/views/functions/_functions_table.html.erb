@@ -17,7 +17,7 @@
 
 <% @functions.each do |function| %>
   <tr>
-    <td><%= function.exercise_set.name_with_exercise %></td>
+    <td><%= function.exercise_set.name_with_exercise %> (<%= function.exercise_set.id %>)</td>
     <td><%= function.variable %></td>
     <td><%= function.base %></td>
     <td><%= function.inc %></td>
@@ -36,7 +36,7 @@
     <%- n = WorkoutDate.next_free_n(workout.id) - 1 -%>
     <%- not_applied = function.value(n).nil? -%>
     <tr class="<%= "not_applied" if not_applied %>">
-      <td colspan="12" style="padding-left: 50px">
+      <td colspan="12" style="padding-left: 50px; color: gray">
         <%- for m in (Math.max(0,n-5)..n+5) -%>
           <%- if n == m -%><strong><%- end -%>
             <%= m %>:<%= function.value(m) -%>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110326025000) do
+ActiveRecord::Schema.define(:version => 20110821205328) do
 
   create_table "exercise_log_entries", :force => true do |t|
     t.integer  "workout_date_id"
@@ -78,12 +78,21 @@ ActiveRecord::Schema.define(:version => 20110326025000) do
     t.datetime "updated_at"
   end
 
+  create_table "set_goals", :force => true do |t|
+    t.integer  "workout_date_id"
+    t.integer  "set_id"
+    t.string   "variable"
+    t.float    "value"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
   create_table "set_log_entries", :force => true do |t|
     t.integer  "exercise_log_entry_id"
-    t.integer  "workout_set_id"
+    t.integer  "set_log_entry_id"
     t.integer  "position"
-    t.decimal  "v1",                    :precision => 10, :scale => 0
-    t.decimal  "v2",                    :precision => 10, :scale => 0
+    t.decimal  "weight",                :precision => 10, :scale => 0
+    t.decimal  "reps",                  :precision => 10, :scale => 0
     t.decimal  "v3",                    :precision => 10, :scale => 0
     t.decimal  "v4",                    :precision => 10, :scale => 0
     t.decimal  "v5",                    :precision => 10, :scale => 0

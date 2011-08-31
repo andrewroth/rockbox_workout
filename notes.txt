@@ -1,3 +1,9 @@
+Ok, so I want to be able to track how much I actually did.  It's fine if
+I just edit that in rails.  I can have a linear goal, and a "next
+workout goal" and an "actually did" record.
+
+I can tie it with an exercise id and workout date id.
+
 https://github.com/mwarnock/rails-google-visualization-plugin
 https://code.google.com/apis/visualization/documentation/gallery/motionchart.html
 http://pullmonkey.com/2008/8/1/open-flash-chart-ii-line-graph/

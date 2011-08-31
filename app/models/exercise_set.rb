@@ -3,7 +3,7 @@ class ExerciseSet < ActiveRecord::Base
 
   belongs_to :exercise
   has_many :functions
-  has_many :set_log_entries, :foreign_key => "workout_set_id"
+  has_many :set_log_entries, :foreign_key => "set_log_entry_id"
 
   def self.write_csv
     super do
@@ -26,18 +26,26 @@ class ExerciseSet < ActiveRecord::Base
     return nil
   end
 
-  def weights_goal_hash
-    ns = set_log_entries.collect(&:exercise_log_entry).collect &:n
-    min_n = ns.min.to_i; max_n = [ ns.max.to_i, min_n + 5 ].max
+  def weights_goal_hash(options = {})
+    #ns = set_log_entries.collect(&:exercise_log_entry).collect &:n
+    ns = self.exercise.workouts.collect(&:workout_dates).flatten.collect(&:n)
+    min_n = options[:start_n].present? ? options[:start_n] : ns.min.to_i
+    max_n = [ ns.max.to_i, min_n + 5 ].max
+    max_n += options[:project] if options[:project].present?
+    puts "min_n: #{min_n}; max_n: #{max_n}"
     weights = ActiveSupport::OrderedHash.new
+    # fill up 0 to min_n with nil
+    (0..min_n-1).each { |n|
+      weights[n] = nil
+    }
     (min_n..max_n).each { |n|
       weights[n] = self.value_of("weight", n)
     }
     return weights
   end
 
-  def weights_goal_arr
-    weights_goal_hash.values
+  def weights_goal_arr(options = {})
+    weights_goal_hash(options).values
   end
 
   def reps_goal_hash

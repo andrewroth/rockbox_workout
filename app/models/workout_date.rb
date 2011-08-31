@@ -3,6 +3,9 @@ class WorkoutDate < ActiveRecord::Base
 
   belongs_to :workout
   has_many :exercise_log_entries
+  has_many :set_goals
+
+  after_create :set_default_goals
 
   def self.write_csv
     super do
@@ -42,5 +45,39 @@ class WorkoutDate < ActiveRecord::Base
   def self.next_free_n(workout_id)
     max_n = self.maximum_n_from_workout_id(workout_id)
     max_n ? max_n + 1 : 0
+  end
+
+  def last
+    return @last_wd if @last_wd
+    # find one earlier workout date
+    @last_wd = workout.workout_dates.find_by_n(self.n - 1)
+  end
+
+  def goal(set, variable, params = {})
+    set_goal = set_goals.find_by_set_id_and_variable(set.try(:id), variable)
+    if params[:set_default]
+      # find one earlier workout date
+      workout = set_goal.workout_date.workout
+      last_wd = workout.workout_dates.find_by_n(self.n - 1)
+      # find one earlier workout set goal
+      last_goal = last_wd.set_goals.find_by_set_id_and_variable(set.try(:id), variable)
+      # copy value
+      workout_date.variable = last_wd.variable
+      workout_date.save!
+    end
+    set_goal.try(:value)
+  end
+
+  def set_default_goals
+
+    if last_wd
+      self.workout.exercises.each do |ex|
+        @workout_date.exercise_log_entries.find_or_create_by_exercise_id(exercise)
+
+        ex.sets.each do |set|
+          sle = set.set_log_entries.find_or_create_by_exercise_log_entry_id(ele.id)
+        end
+      end
+    end
   end
 end

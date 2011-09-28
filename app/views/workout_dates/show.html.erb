@@ -1,3 +1,4 @@
+<%= javascript_include_tag "workout_dates" %>
 <%- @wd = @workout_date %>
 <p id="notice"><%= notice %></p>
 
@@ -24,7 +25,7 @@
    %>
     <tr>
       <td colspan="2">
-      <%= link_to exercise.name, exercise %> (<%= exercise.exercise_type.name %>)
+        <%= link_to exercise.name, exercise %> (<%= exercise.exercise_type.name %>) [ele id: <%= @ele.try(:id) %>] [sle ids: <%= @ele.set_log_entries.collect(&:id).join(',') if @ele %>]
       </td>
     </tr>
     <tr>
@@ -35,14 +36,14 @@
       <th>Long-term Goal</th>
       <th>Actual</th>
     </tr>
-    <%- exercise.exercise_sets.each do |set| -%>
-      <%- @sle = @ele.set_log_entries.find_by_set_id(set) if @ele %>
-      <%- @last_sle = @last_ele.set_log_entries.find_by_set_id(set) if @last_ele %>
+    <%- exercise.sets.each do |set| -%>
+      <%- @sle = @ele.set_log_entries.find_by_set_id(set.id) if @ele %>
+      <%- @last_sle = @last_ele.set_log_entries.find_by_set_id(set.id) if @last_ele %>
       <tr>
         <td>&nbsp;</td><!-- space -->
         <%- if exercise.exercise_type.name == "weights" -%>
           <td>
-            <%= set.name %>
+            <%= set.name %> [set id: <%= set.id %> ] [sle id: <%= @sle.try(:id) %>]
           </td>
           <td>
             <%= @last_sle.try(:reps) %>x
@@ -57,8 +58,8 @@
           </td>
           <td>
             <%- if @sle %>
-              <%= text_field_tag "actual_reps", @sle.reps, :style => "width: 20px" %>x
-              <%= text_field_tag "actual_wt", @sle.weight, :style => "width: 50px" %>
+              <%= text_field_tag "actual_reps_#{@sle.id}", @sle.reps, :style => "width: 20px", :class => 'actual reps', :sle_id => @sle.id %>x
+              <%= text_field_tag "actual_wt_#{@sle.id}", @sle.weight, :style => "width: 50px", :class => 'actual weight', :sle_id => @sle.id %>
             <%- end %>
           </td>
         <%- end -%>

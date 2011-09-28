@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110821205328) do
+ActiveRecord::Schema.define(:version => 20110831173939) do
 
   create_table "exercise_log_entries", :force => true do |t|
     t.integer  "workout_date_id"
@@ -22,14 +22,6 @@ ActiveRecord::Schema.define(:version => 20110821205328) do
     t.datetime "started_at"
     t.datetime "finished_at"
     t.datetime "last_completed_at"
-  end
-
-  create_table "exercise_sets", :force => true do |t|
-    t.string   "name"
-    t.integer  "position"
-    t.integer  "exercise_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
   end
 
   create_table "exercise_types", :force => true do |t|
@@ -66,7 +58,7 @@ ActiveRecord::Schema.define(:version => 20110821205328) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "variable"
-    t.integer  "exercise_set_id"
+    t.integer  "set_id"
     t.integer  "workout_id"
   end
 
@@ -103,6 +95,15 @@ ActiveRecord::Schema.define(:version => 20110821205328) do
     t.datetime "started_at"
     t.datetime "completed_at"
     t.datetime "done_rested_at"
+    t.integer  "set_id"
+  end
+
+  create_table "sets", :force => true do |t|
+    t.string   "name"
+    t.integer  "position"
+    t.integer  "exercise_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
   create_table "workout_dates", :force => true do |t|

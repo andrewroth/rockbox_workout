@@ -1,0 +1,13 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+one:
+  workout_date_id: 1
+  set_id: 1
+  variable: MyString
+  value: 1.5
+
+two:
+  workout_date_id: 1
+  set_id: 1
+  variable: MyString
+  value: 1.5

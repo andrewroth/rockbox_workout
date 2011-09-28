@@ -14,7 +14,7 @@
 <%- @workout.exercises.each do |exercise| %>
   <LI><%= exercise.name %></LI>
   <UL>
-    <%- exercise.exercise_sets.each do |set| -%>
+    <%- exercise.sets.each do |set| -%>
       <LI><%= set.name %></LI>
     <%- end -%>
   </UL>

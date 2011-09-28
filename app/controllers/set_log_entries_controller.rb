@@ -62,6 +62,7 @@ class SetLogEntriesController < ApplicationController
       if @set_log_entry.update_attributes(params[:set_log_entry])
         format.html { redirect_to(@set_log_entry, :notice => 'Set log entry was successfully updated.') }
         format.xml  { head :ok }
+        format.js  { render(:text => "") }
       else
         format.html { render :action => "edit" }
         format.xml  { render :xml => @set_log_entry.errors, :status => :unprocessable_entity }
